@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Test.Data;
 
@@ -11,9 +12,11 @@ using Test.Data;
 namespace Test.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    partial class NewDBContextModelSnapshot : ModelSnapshot
+    [Migration("20230222170000_UserAuthen")]
+    partial class UserAuthen
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -161,15 +164,15 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CustomersId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("OderDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UserAppId")
-                        .HasColumnType("nvarchar(450)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserAppId");
+                    b.HasIndex("CustomersId");
 
                     b.ToTable("Bill");
                 });
@@ -196,6 +199,33 @@ namespace Test.Migrations
                     b.HasIndex("ProductId");
 
                     b.ToTable("BillDetail");
+                });
+
+            modelBuilder.Entity("Test.Data.Customer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Customer");
                 });
 
             modelBuilder.Entity("Test.Data.Product", b =>
@@ -371,11 +401,13 @@ namespace Test.Migrations
 
             modelBuilder.Entity("Test.Data.Bill", b =>
                 {
-                    b.HasOne("Test.Data.UserApp", "UserApp")
+                    b.HasOne("Test.Data.Customer", "Customers")
                         .WithMany("Bills")
-                        .HasForeignKey("UserAppId");
+                        .HasForeignKey("CustomersId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
-                    b.Navigation("UserApp");
+                    b.Navigation("Customers");
                 });
 
             modelBuilder.Entity("Test.Data.BillDetail", b =>
@@ -405,6 +437,11 @@ namespace Test.Migrations
                     b.Navigation("BillDetails");
                 });
 
+            modelBuilder.Entity("Test.Data.Customer", b =>
+                {
+                    b.Navigation("Bills");
+                });
+
             modelBuilder.Entity("Test.Data.Product", b =>
                 {
                     b.Navigation("BillDetails");
@@ -413,11 +450,6 @@ namespace Test.Migrations
             modelBuilder.Entity("Test.Data.Type", b =>
                 {
                     b.Navigation("Products");
-                });
-
-            modelBuilder.Entity("Test.Data.UserApp", b =>
-                {
-                    b.Navigation("Bills");
                 });
 #pragma warning restore 612, 618
         }

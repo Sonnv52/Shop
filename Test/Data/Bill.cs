@@ -12,6 +12,9 @@ namespace Test.Data
         public DateTime OderDate { get; set; }
 
         public virtual ICollection<BillDetail> BillDetails { get; set; }
-        public Customer Customer { get; set; }
+        public UserApp UserApp { get; set; }
+        public Bill() { 
+          BillDetails = new HashSet<BillDetail>();        
+        }
     }
 }
