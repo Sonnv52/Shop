@@ -10,6 +10,7 @@ using System.Text;
 using Test.Data;
 using System.Data;
 using Azure;
+using AutoMapper;
 
 namespace Test.Repository
 {
@@ -19,12 +20,15 @@ namespace Test.Repository
         private readonly IConfiguration _configuration;
         private readonly SignInManager<UserApp> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        public UserRespository(UserManager<UserApp> userManager,SignInManager<UserApp> signInManager,RoleManager<IdentityRole> roleManager, IConfiguration configuration)
+        private readonly IMapper _mapper;
+        public UserRespository(UserManager<UserApp> userManager,SignInManager<UserApp> signInManager,
+            RoleManager<IdentityRole> roleManager,IMapper mapper, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _roleManager = roleManager;
+            _mapper = mapper;
 
         }
         public async Task<string> SignUpAsync(SignUpUser model)
@@ -39,6 +43,7 @@ namespace Test.Repository
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Email,
                 Name= model.Name,
+                Adress = model.Adress
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
@@ -58,9 +63,7 @@ namespace Test.Repository
                 await _userManager.AddToRoleAsync(user, UserRoles.User);
             }
             return "true";
-        
     }
-
 
         public async Task<string> SignInAsync(SignInUser model)
         {
@@ -68,22 +71,17 @@ namespace Test.Repository
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
-
                 var authClaims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, user.UserName),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 };
-
                 foreach (var userRole in userRoles)
                 {
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                 }
-
                 var token = GetToken(authClaims);
-
                 return new JwtSecurityTokenHandler().WriteToken(token);
-                
             }
             return "false";
         }
@@ -98,8 +96,33 @@ namespace Test.Repository
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
-
             return token;
+        }
+
+        public async Task<string> SignUpUserAsync(SignUpUser model)
+        {
+            var userExists = await _userManager.FindByNameAsync(model.Email);
+            if (userExists != null)
+                return "Exsit";
+            UserApp user = new()
+            {
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                UserName = model.Email,
+                Name = model.Name,
+                Adress = model.Adress
+            };
+            var result = await _userManager.CreateAsync(user, model.Password);
+            if (!result.Succeeded)
+                return "false";
+            return "success";
+        }
+
+        public async Task<ProfileUser> GetProfileUser(string Email)
+        {
+            var userExists = await _userManager.FindByNameAsync(Email);
+            var user = _mapper.Map<ProfileUser>(userExists);
+            return user;
         }
     }
 }

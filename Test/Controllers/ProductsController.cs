@@ -10,8 +10,7 @@ using Test.Data;
 
 namespace Test.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer")]
-    [Authorize(Roles ="Admin")]
+    [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -47,6 +46,7 @@ namespace Test.Controllers
 
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(Guid id, Product product)
         {
@@ -78,6 +78,7 @@ namespace Test.Controllers
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
@@ -88,6 +89,7 @@ namespace Test.Controllers
         }
 
         // DELETE: api/Products/5
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
