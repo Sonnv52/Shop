@@ -7,27 +7,30 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Test.Data;
+using Test.Repository;
 
 namespace Test.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+    
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
         private readonly NewDBContext _context;
-
-        public ProductsController(NewDBContext context)
+        private readonly IProductServices _productservices;
+        public ProductsController(NewDBContext context, IProductServices productservice)
         {
             _context = context;
+            _productservices = productservice;
         }
         
         // GET: api/Products
         [HttpGet]
         
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<Product>>> GetProducts(string? key)
         {
-            return await _context.Products.ToListAsync();
+            var result = await _productservices.GetProductAsync(key);
+            return Ok(result);
         }
 
         // GET: api/Products/5
@@ -72,7 +75,6 @@ namespace Test.Controllers
                     throw;
                 }
             }
-
             return NoContent();
         }
 
@@ -84,7 +86,6 @@ namespace Test.Controllers
         {
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
 

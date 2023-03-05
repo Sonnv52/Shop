@@ -11,6 +11,7 @@ using Test.Data;
 using System.Data;
 using Azure;
 using AutoMapper;
+using ForgotPasswordService.Repository;
 
 namespace Test.Repository
 {
@@ -21,14 +22,16 @@ namespace Test.Repository
         private readonly SignInManager<UserApp> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
+        private readonly IAccount _account;
         public UserRespository(UserManager<UserApp> userManager,SignInManager<UserApp> signInManager,
-            RoleManager<IdentityRole> roleManager,IMapper mapper, IConfiguration configuration)
+            RoleManager<IdentityRole> roleManager,IMapper mapper,IAccount account, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _roleManager = roleManager;
             _mapper = mapper;
+            _account= account;
 
         }
         public async Task<string> SignUpAsync(SignUpUser model)
@@ -53,7 +56,6 @@ namespace Test.Repository
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
             if (!await _roleManager.RoleExistsAsync(UserRoles.User))
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
-
             if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
             {
                 await _userManager.AddToRoleAsync(user, UserRoles.Admin);
@@ -124,5 +126,27 @@ namespace Test.Repository
             var user = _mapper.Map<ProfileUser>(userExists);
             return user;
         }
+
+        public async Task<string> SetProfileUser(SignUpUser user, string mail)
+        {
+            var usercurent = await _userManager.FindByEmailAsync(mail);
+            if(user.Adress != null)
+            {
+                usercurent.Adress = user.Adress;
+            }
+            if (user.PhoneNumber != null)
+            {
+                usercurent.PhoneNumber = user.PhoneNumber;
+            }
+            if (user.Name != null)
+            {
+                usercurent.Name = user.Name;
+            }
+            var result = await _userManager.UpdateAsync(usercurent);
+            if(!result.Succeeded) return "false";
+            return "success";
+        }
+
+
     }
 }

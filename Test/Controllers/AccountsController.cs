@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using ForgotPasswordService.Repository;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -19,12 +20,17 @@ namespace Test.Controllers
         private readonly NewDBContext _newDBContext;
         private IHttpContextAccessor _httpContextAccessor;
         private readonly UserManager<UserApp> _userManager;
-        public AccountsController(IUserRepository userRepository, NewDBContext newDBContext, IHttpContextAccessor httpContextAccessor, UserManager<UserApp> userManager)
+        private readonly IAccount _account;
+        private readonly ILogger<AccountsController> _logger;
+        public AccountsController(IUserRepository userRepository, NewDBContext newDBContext, IHttpContextAccessor httpContextAccessor,
+            UserManager<UserApp> userManager, IAccount account, ILogger<AccountsController> logger)
         {
             _userRepository = userRepository;
             _newDBContext = newDBContext;
             _httpContextAccessor = httpContextAccessor;
             _userManager = userManager;
+            _account = account;
+            _logger = logger;
         }
         [HttpPost("SignUp")]
         public async Task<IActionResult> SignUpAsync([FromBody] SignUpUser user)
@@ -44,7 +50,7 @@ namespace Test.Controllers
         [HttpPost("SignUpUser")]
         public async Task<IActionResult> SignUpUserAsync(SignUpUser user)
         {
-            var result = await _userRepository.SignUpUserAsync(user);
+            string result = await _userRepository.SignUpUserAsync(user);
             if (result == "success")
             {
                 return Ok("success!!");
@@ -60,9 +66,9 @@ namespace Test.Controllers
         public async Task<IActionResult> SignInAsync(SignInUser user)
         {
             var result = await _userRepository.SignInAsync(user);
-            if (string.IsNullOrEmpty(result))
+            if (result == "false")
             {
-                return BadRequest();
+                return StatusCode(400, "Password or Email incorect"); ;
             }
             
             var auth = new AuthenRespone{
@@ -73,25 +79,53 @@ namespace Test.Controllers
         }
 
         [HttpGet("profile")]
-        [Authorize(AuthenticationSchemes = "Bearer")]
+        [Authorize(AuthenticationSchemes = "Bearer"),Authorize(Roles ="Admin")]
         public async Task<IActionResult> GetProfileAsync([FromBody] String Email)
         {
             var user = await _userRepository.GetProfileUser(Email);
             if (user == null)
             {
-                return BadRequest();
+                return StatusCode(500, "Internal Server Error");
             }
             return Ok(user);
         }
 
-        [HttpGet("test")]
+        [HttpGet("profile/user")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> GetCurrentID()
+        public async Task<IActionResult> GetCurrentProfileAsync()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userName = User.FindFirstValue(ClaimTypes.Name);
-            var email = User.FindFirstValue(ClaimTypes.Email);
-            return Ok(email);
+            var result = await _userRepository.GetProfileUser(userName);
+            if (result == null)
+            {
+                return StatusCode(500, "Internal Server Error");
+            }
+            return Ok(result);
+        }
+
+        [HttpPost("ChangeProfile")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> ChangeProfileAsync([FromBody] SignUpUser user)
+        {
+           string userName = User.FindFirstValue(ClaimTypes.Name);
+           string result = await _userRepository.SetProfileUser(user, userName);
+            if(result == null)
+            {
+                return StatusCode(400, "False to save!!");
+            }
+            if(result == "false")
+            {
+                return StatusCode(401, "False to save!!");
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("test")]
+        public async Task<IActionResult> Getnew()
+        {
+            
+            string a= await _account.GetAccount("1234342");
+            return Ok(a);
         }
     }
 }

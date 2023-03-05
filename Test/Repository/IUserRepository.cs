@@ -9,5 +9,6 @@ namespace Test.Repository
         public Task<string> SignInAsync(SignInUser user);
         public Task<string> SignUpUserAsync(SignUpUser user);
         public Task<ProfileUser> GetProfileUser(string Email);
+        public Task<string> SetProfileUser(SignUpUser user,string mail);
     }
 }

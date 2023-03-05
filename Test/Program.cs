@@ -10,6 +10,9 @@ using System.Text;
 using Test.Data;
 using Test.Repository;
 using AutoMapper;
+using ForgotPasswordService.Repository;
+using System.Security.Principal;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -48,6 +51,7 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddMvc();
 builder.Services.AddDbContext<NewDBContext>(options =>
 options.UseSqlServer(
     builder.Configuration.GetConnectionString("ShopConnect")));
@@ -72,8 +76,19 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
     };
 });
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowOrigin",
+    builder =>
+    {
+        builder.WithOrigins("http://localhost:3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddScoped<IUserRepository, UserRespository>();
+builder.Services.AddScoped<IProductServices, ProductRepository>();
+builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
     .AddDefaultTokenProviders();
@@ -104,7 +119,7 @@ app.UseHttpsRedirection();
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();
-
+app.UseCors("AllowOrigin");
 app.MapControllers();
 
 app.Run();
