@@ -4,7 +4,6 @@ namespace Test.Models
 {
     public class ProductT
     {
-        
         public Guid Id { get; set; }
       
         public string? Name { get; set; }

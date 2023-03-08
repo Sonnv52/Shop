@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Differencing;
+using Microsoft.Extensions.Caching.Distributed;
 using System.Security.Claims;
 using Test.Data;
 using Test.Models;

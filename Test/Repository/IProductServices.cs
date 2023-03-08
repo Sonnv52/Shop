@@ -5,6 +5,7 @@ namespace Test.Repository
 {
     public interface IProductServices
     {
-        public Task<IEnumerable<ProductT>> GetProductAsync(SearchModel search);
+        public Task<PageProduct> GetProductAsync(SearchModel search, PagingSearch paging);
+        public Task<Product> GetOneProductAsync(Guid id);
     }
 }

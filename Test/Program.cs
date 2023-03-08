@@ -81,10 +81,14 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowOrigin",
     builder =>
     {
-        builder.WithOrigins("http://localhost:3000")
+        builder.WithOrigins("*")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
+});
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["RedisCacheServerUrl"];
 });
 builder.Services.AddScoped<IUserRepository, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();

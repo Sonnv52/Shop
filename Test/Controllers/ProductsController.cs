@@ -6,7 +6,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 using Test.Data;
+using Test.Models;
 using Test.Repository;
 
 namespace Test.Controllers
@@ -18,18 +21,46 @@ namespace Test.Controllers
     {
         private readonly NewDBContext _context;
         private readonly IProductServices _productservices;
-        public ProductsController(NewDBContext context, IProductServices productservice)
+        private readonly IDistributedCache _cache;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+      
+        public ProductsController(NewDBContext context, IProductServices productservice, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
             _productservices = productservice;
+            _cache = cache;
+            _httpContextAccessor = httpContextAccessor;
         }
-        
+
         // GET: api/Products
-        [HttpGet]
+        [HttpPost("GetProduct")]
         
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts(string? key)
-        {
-            var result = await _productservices.GetProductAsync(key);
+        public async Task<ActionResult<PageProduct>> GetProducts([FromBody] SearchModel? search, [FromQuery] PagingSearch? paging)
+        {   
+            if (paging == null)
+            {
+                return StatusCode(401, "Expected paging!!!");
+            }
+            var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{paging?.PageSize}:{paging?.PageIndex}";
+            // Check if the search query is already cached in Redis
+            var cachedResult = await _cache.GetStringAsync(cacheKey);
+            if (cachedResult != null)
+            {
+                // If the result is cached, return it from the cache
+                return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
+            }
+
+            // If the result is not cached, execute the search query
+            var result = await _productservices.GetProductAsync(search, paging);
+
+            // Serialize the result and cache it in Redis for 1 hour
+            var serializedResult = JsonConvert.SerializeObject(result);
+            await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
+
+            // Return the result
             return Ok(result);
         }
 
