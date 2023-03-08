@@ -6,29 +6,62 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
+using Newtonsoft.Json;
 using Test.Data;
+using Test.Models;
+using Test.Repository;
 
 namespace Test.Controllers
 {
-    [Authorize(AuthenticationSchemes = "Bearer")]
-    [Authorize(Roles ="Admin")]
+    
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
     {
         private readonly NewDBContext _context;
-
-        public ProductsController(NewDBContext context)
+        private readonly IProductServices _productservices;
+        private readonly IDistributedCache _cache;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+      
+        public ProductsController(NewDBContext context, IProductServices productservice, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
+            _productservices = productservice;
+            _cache = cache;
+            _httpContextAccessor = httpContextAccessor;
         }
-        
+
         // GET: api/Products
-        [HttpGet]
+        [HttpPost("GetProduct")]
         
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
-        {
-            return await _context.Products.ToListAsync();
+        public async Task<ActionResult<PageProduct>> GetProducts([FromBody] SearchModel? search, [FromQuery] PagingSearch? paging)
+        {   
+            if (paging == null)
+            {
+                return StatusCode(401, "Expected paging!!!");
+            }
+            var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{paging?.PageSize}:{paging?.PageIndex}";
+            // Check if the search query is already cached in Redis
+            var cachedResult = await _cache.GetStringAsync(cacheKey);
+            if (cachedResult != null)
+            {
+                // If the result is cached, return it from the cache
+                return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
+            }
+
+            // If the result is not cached, execute the search query
+            var result = await _productservices.GetProductAsync(search, paging);
+
+            // Serialize the result and cache it in Redis for 1 hour
+            var serializedResult = JsonConvert.SerializeObject(result);
+            await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+            });
+
+            // Return the result
+            return Ok(result);
         }
 
         // GET: api/Products/5
@@ -47,6 +80,7 @@ namespace Test.Controllers
 
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         public async Task<IActionResult> PutProduct(Guid id, Product product)
         {
@@ -72,22 +106,22 @@ namespace Test.Controllers
                     throw;
                 }
             }
-
             return NoContent();
         }
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<Product>> PostProduct(Product product)
         {
             _context.Products.Add(product);
             await _context.SaveChangesAsync();
-
             return CreatedAtAction("GetProduct", new { id = product.Id }, product);
         }
 
         // DELETE: api/Products/5
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
