@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Shop.Api.Data;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Test.Data
@@ -16,8 +17,10 @@ namespace Test.Data
         public string Image { get; set; }
         public double? Seleoff { get; set; }
         public virtual ICollection<BillDetail> BillDetails { get;set; }
+        public virtual ICollection<ImageProducts> ImageProducts { get; set; }
         public Type Type { get; set; }
-        public Product() { 
+        public Product() {
+            ImageProducts = new List<ImageProducts>();
             BillDetails = new List<BillDetail>();
         }
     }
