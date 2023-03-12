@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Newtonsoft.Json;
+using Shop.Api.Models.CreateModel;
+using StackExchange.Redis;
 using Test.Data;
 using Test.Models;
 using Test.Repository;
@@ -50,15 +53,16 @@ namespace Test.Controllers
                 // If the result is cached, return it from the cache
                 return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
             }
-
             // If the result is not cached, execute the search query
             var result = await _productservices.GetProductAsync(search, paging);
 
             // Serialize the result and cache it in Redis for 1 hour
             var serializedResult = JsonConvert.SerializeObject(result);
+           
             await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+
             });
 
             // Return the result
@@ -112,13 +116,13 @@ namespace Test.Controllers
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+       // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<ActionResult<Product>> PostProduct([FromForm]ProductAdd product)
         {
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+            string result = await _productservices.AddProductAsysnc(product);
+            
+            return CreatedAtAction("GetProduct", new { id = result }, product);
         }
 
         // DELETE: api/Products/5

@@ -12,6 +12,7 @@ using Test.Repository;
 using AutoMapper;
 using ForgotPasswordService.Repository;
 using System.Security.Principal;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,6 +90,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["RedisCacheServerUrl"];
+    options.InstanceName = "Product";
 });
 builder.Services.AddScoped<IUserRepository, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
@@ -117,9 +119,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
+app.UseStaticFiles();
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();

@@ -1,4 +1,5 @@
-﻿using Test.Data;
+﻿using Shop.Api.Models.CreateModel;
+using Test.Data;
 using Test.Models;
 
 namespace Test.Repository
@@ -7,5 +8,6 @@ namespace Test.Repository
     {
         public Task<PageProduct> GetProductAsync(SearchModel search, PagingSearch paging);
         public Task<Product> GetOneProductAsync(Guid id);
+        public Task<string> AddProductAsysnc(ProductAdd product);
     }
 }
