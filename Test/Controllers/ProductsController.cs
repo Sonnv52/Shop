@@ -116,15 +116,7 @@ namespace Test.Controllers
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-       // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
-        [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct([FromForm]ProductAdd product)
-        {
-            string result = await _productservices.AddProductAsysnc(product);
-            
-            return CreatedAtAction("GetProduct", new { id = result }, product);
-        }
-
+       
         // DELETE: api/Products/5
         [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
@@ -141,10 +133,10 @@ namespace Test.Controllers
 
             return NoContent();
         }
-
         private bool ProductExists(Guid id)
         {
             return _context.Products.Any(e => e.Id == id);
         }
+        
     }
 }

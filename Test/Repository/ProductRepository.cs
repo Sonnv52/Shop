@@ -64,6 +64,15 @@ namespace Test.Repository
             IEnumerable<ProductT> returns = products.Select(pro => _mapper.Map<ProductT>(pro));
             var total = returns.Count();
             returns = returns.ToPagedList(paging.PageIndex, paging.PageSize);
+            foreach (var item in returns)
+            {
+                var imagePath = Path.Combine(item.Image);
+
+                if (System.IO.File.Exists(imagePath))
+                {
+                    item.IM = await System.IO.File.ReadAllBytesAsync(imagePath);
+                }
+            }
             return new PageProduct
             {
 
@@ -92,14 +101,14 @@ namespace Test.Repository
                     Image = imagePath
                 };
                 var type = await _dbContext.Types.FirstOrDefaultAsync(ty => ty.Id == product.type);
-                if (type != null)
+                if (type == null)
                 {
                     return "false for category!!";
                 }
                 pro.Type = type;
                 var i = await _dbContext.Products.AddAsync(pro);
                 await _dbContext.SaveChangesAsync();
-                return pro.Id.ToString();
+                return "ok";
             }
             return "Image or category maybe null!!";
         }

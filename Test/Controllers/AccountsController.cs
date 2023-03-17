@@ -67,6 +67,7 @@ namespace Test.Controllers
         public async Task<IActionResult> SignInAsync(SignInUser user)
         {
             var result = await _userRepository.SignInAsync(user);
+            var refreshtoken = "";
             if (result == "false")
             {
                 return StatusCode(400, "Password or Email incorect"); ;
@@ -74,7 +75,8 @@ namespace Test.Controllers
             
             var auth = new AuthenRespone{
                 User = user.Email,
-                Token = result
+                Token = result,
+                RefreshToken= refreshtoken
             };
             return Ok(auth);
         }
