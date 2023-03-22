@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Shop.Api.Models.CreateModel;
+using Shop.Api.Models.Products;
 using Test.Data;
 using Test.Repository;
 
@@ -55,6 +56,11 @@ namespace Shop.Api.Controllers.Admin
             return NoContent();
         }
 
+        [HttpPost("UpLoad/Imgage")]
+        public async Task<IActionResult> UploadImageAsync()
+        {
+            return Ok();
+        }
         // POST: api/AdminProducts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
@@ -73,7 +79,12 @@ namespace Shop.Api.Controllers.Admin
             return Ok(result);
         }
 
-
+        //Add size for product after add product
+        [HttpPut("addSize")]
+        public async Task<IActionResult> AddSizeAsync([FromBody] AddSize<StringSize> stringSizes)
+        {
+            return Ok();
+        }
         // DELETE: api/AdminProducts/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(Guid id)

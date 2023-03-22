@@ -12,6 +12,7 @@ using System.Data;
 using Azure;
 using AutoMapper;
 using ForgotPasswordService.Repository;
+using Shop.Api.Models.CreateModel;
 
 namespace Test.Repository
 {
@@ -51,7 +52,7 @@ namespace Test.Repository
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
                 return "false";
-
+      
             if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
             if (!await _roleManager.RoleExistsAsync(UserRoles.User))
