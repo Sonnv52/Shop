@@ -19,9 +19,12 @@ namespace Test.Data
         public virtual ICollection<BillDetail> BillDetails { get;set; }
         public virtual ICollection<ImageProducts> ImageProducts { get; set; }
         public Type Type { get; set; }
+        public string? CreateAt { get; set; }  
+        public virtual ICollection<Size> Sizes { get; set; }
         public Product() {
             ImageProducts = new List<ImageProducts>();
             BillDetails = new List<BillDetail>();
+            CreateAt = DateTime.Now.ToString();
         }
     }
 }

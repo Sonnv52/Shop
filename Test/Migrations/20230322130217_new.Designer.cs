@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Test.Data;
 
@@ -11,9 +12,11 @@ using Test.Data;
 namespace Test.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    partial class NewDBContextModelSnapshot : ModelSnapshot
+    [Migration("20230322130217_new")]
+    partial class @new
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -155,6 +158,21 @@ namespace Test.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("ProductSize", b =>
+                {
+                    b.Property<Guid>("ProductsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SizesId")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductsId", "SizesId");
+
+                    b.HasIndex("SizesId");
+
+                    b.ToTable("ProductSize");
+                });
+
             modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
                 {
                     b.Property<Guid>("Id")
@@ -191,23 +209,17 @@ namespace Test.Migrations
 
             modelBuilder.Entity("Shop.Api.Data.Size", b =>
                 {
-                    b.Property<Guid>("IdSize")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ProductsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Qty")
                         .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("size")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("IdSize");
-
-                    b.HasIndex("ProductsId");
+                    b.HasKey("Id");
 
                     b.ToTable("Size");
                 });
@@ -261,8 +273,8 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CreateAt")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -433,6 +445,21 @@ namespace Test.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("ProductSize", b =>
+                {
+                    b.HasOne("Test.Data.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Shop.Api.Data.Size", null)
+                        .WithMany()
+                        .HasForeignKey("SizesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
                 {
                     b.HasOne("Test.Data.Product", "Product")
@@ -440,15 +467,6 @@ namespace Test.Migrations
                         .HasForeignKey("ProductId");
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Shop.Api.Data.Size", b =>
-                {
-                    b.HasOne("Test.Data.Product", "Products")
-                        .WithMany("Sizes")
-                        .HasForeignKey("ProductsId");
-
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Test.Data.Bill", b =>
@@ -492,8 +510,6 @@ namespace Test.Migrations
                     b.Navigation("BillDetails");
 
                     b.Navigation("ImageProducts");
-
-                    b.Navigation("Sizes");
                 });
 
             modelBuilder.Entity("Test.Data.Type", b =>

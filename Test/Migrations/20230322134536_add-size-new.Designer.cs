@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Test.Data;
 
@@ -11,9 +12,11 @@ using Test.Data;
 namespace Test.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    partial class NewDBContextModelSnapshot : ModelSnapshot
+    [Migration("20230322134536_add-size-new")]
+    partial class addsizenew
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -191,9 +194,11 @@ namespace Test.Migrations
 
             modelBuilder.Entity("Shop.Api.Data.Size", b =>
                 {
-                    b.Property<Guid>("IdSize")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<Guid?>("ProductsId")
                         .HasColumnType("uniqueidentifier");
@@ -205,7 +210,7 @@ namespace Test.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("IdSize");
+                    b.HasKey("Id");
 
                     b.HasIndex("ProductsId");
 

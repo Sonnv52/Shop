@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Test": {
+    "Run": {
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "swagger",
@@ -9,6 +9,13 @@
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7164;http://localhost:5194"
+    },
+    "Migration": {
+      "commandName": "Executable",
+      "executablePath": "dotnet",
+      "workingDirectory": "C:\\Users\\Admin\\OneDrive\\Documents\\Shop_BE\\Test",
+      "commandLineArgs": "ef --startup-project Shop.Api --project Shop.Api add-migration InitialMigration --context MyDbContext; ef --startup-project Shop.Api --project Shop.Api database update --context MyDbContext"
+
     },
     "IIS Express": {
       "commandName": "IISExpress",

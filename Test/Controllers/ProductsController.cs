@@ -43,44 +43,45 @@ namespace Test.Controllers
             if (paging == null)
             {
                 return StatusCode(401, "Expected paging!!!");
+                
             }
-            var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{paging?.PageSize}:{paging?.PageIndex}";
-            // Check if the search query is already cached in Redis
-
-            var cachedResult = await _cache.GetStringAsync(cacheKey);
-            if (cachedResult != null)
+            try
             {
-                // If the result is cached, return it from the cache
-                return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
+                var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{paging?.PageSize}:{paging?.PageIndex}";
+                // Check if the search query is already cached in Redis
+
+                var cachedResult = await _cache.GetStringAsync(cacheKey);
+                if (cachedResult != null)
+                {
+                    // If the result is cached, return it from the cache
+                    return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
+                }
+                // If the result is not cached, execute the search query
+                var result = await _productservices.GetProductAsync(search, paging);
+
+                // Serialize the result and cache it in Redis for 1 hour
+                var serializedResult = JsonConvert.SerializeObject(result);
+
+                await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
+
+                });
+                return Ok(result);
             }
-            // If the result is not cached, execute the search query
-            var result = await _productservices.GetProductAsync(search, paging);
-
-            // Serialize the result and cache it in Redis for 1 hour
-            var serializedResult = JsonConvert.SerializeObject(result);
-           
-            await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-
-            });
-
+            catch (Exception ex) {  
+                 Console.WriteLine(ex);
+                }
+            var results = await _productservices.GetProductAsync(search, paging);
             // Return the result
-            return Ok(result);
+            return Ok(results);
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(Guid id)
         {
-            var product = await _context.Products.FindAsync(id);
-
-            if (product == null)
-            {
-                return NotFound();
-            }
-
-            return product;
+           return Ok();
         }
 
         // PUT: api/Products/5

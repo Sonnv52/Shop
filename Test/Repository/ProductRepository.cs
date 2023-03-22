@@ -6,9 +6,10 @@ using X.PagedList;
 using System.Linq;
 using Microsoft.Net.Http.Headers;
 using Shop.Api.Models.CreateModel;
-using Type = Test.Data.Type;
 using Microsoft.EntityFrameworkCore;
 using Shop.Api.Enums;
+using Shop.Api.Data;
+using Shop.Api.Models.Products;
 
 namespace Test.Repository
 {
@@ -98,19 +99,49 @@ namespace Test.Repository
                     Name = product.Name != null ? product.Name : "Unknow",
                     Price = (double)product.Price,
                     Description = product.Description != null ? product.Description : "Unknow",
-                    Image = imagePath
+                    Image = imagePath,
                 };
+  
                 var type = await _dbContext.Types.FirstOrDefaultAsync(ty => ty.Id == product.type);
+         
                 if (type == null)
                 {
                     return "false for category!!";
                 }
+
                 pro.Type = type;
                 var i = await _dbContext.Products.AddAsync(pro);
                 await _dbContext.SaveChangesAsync();
-                return "ok";
+                return pro.Id.ToString();
             }
             return "Image or category maybe null!!";
+        }
+
+        public async Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes)
+        {
+            Product product = await _dbContext.Products.FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
+            if (product == null)
+            {
+                return "Product not found!!";
+            }
+            foreach(var i in stringSizes.StringSize)
+            {
+                var Size = new Size
+                {
+                    IdSize = Guid.NewGuid(),
+                    size = i.SizeProduct,
+                    Qty = i.Qty
+                };
+                try
+                {
+                    await _dbContext.Sizes.AddAsync(Size);
+                }catch(Exception ex)
+                {
+                    return $"false to add for {product.Name}";
+                }
+            }
+             await _dbContext.SaveChangesAsync();
+            return "Suggest!!";
         }
 
 
