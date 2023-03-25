@@ -9,11 +9,11 @@ using Test.Data;
 
 #nullable disable
 
-namespace Test.Migrations
+namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    [Migration("20230222170728_update-user")]
-    partial class updateuser
+    [Migration("20230325060720_add-refresh")]
+    partial class addrefresh
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -158,6 +158,63 @@ namespace Test.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Caption")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("ImagePath")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ImageProducts");
+                });
+
+            modelBuilder.Entity("Shop.Api.Data.Size", b =>
+                {
+                    b.Property<Guid>("IdSizelog")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Qty")
+                        .HasColumnType("int");
+
+                    b.Property<string>("size")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("IdSizelog");
+
+                    b.HasIndex("ProductsId");
+
+                    b.ToTable("Size");
+                });
+
             modelBuilder.Entity("Test.Data.Bill", b =>
                 {
                     b.Property<Guid>("Id")
@@ -207,6 +264,9 @@ namespace Test.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CreateAt")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -222,7 +282,7 @@ namespace Test.Migrations
                     b.Property<double>("Price")
                         .HasColumnType("float");
 
-                    b.Property<double>("Seleoff")
+                    b.Property<double?>("Seleoff")
                         .HasColumnType("float");
 
                     b.Property<int>("TypeId")
@@ -259,6 +319,10 @@ namespace Test.Migrations
 
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("int");
+
+                    b.Property<string>("Adress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
@@ -297,6 +361,12 @@ namespace Test.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
@@ -372,6 +442,26 @@ namespace Test.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
+                {
+                    b.HasOne("Test.Data.Product", "Product")
+                        .WithMany("ImageProducts")
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Shop.Api.Data.Size", b =>
+                {
+                    b.HasOne("Test.Data.Product", "Products")
+                        .WithMany("Sizes")
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("Test.Data.Bill", b =>
                 {
                     b.HasOne("Test.Data.UserApp", "UserApp")
@@ -411,6 +501,10 @@ namespace Test.Migrations
             modelBuilder.Entity("Test.Data.Product", b =>
                 {
                     b.Navigation("BillDetails");
+
+                    b.Navigation("ImageProducts");
+
+                    b.Navigation("Sizes");
                 });
 
             modelBuilder.Entity("Test.Data.Type", b =>

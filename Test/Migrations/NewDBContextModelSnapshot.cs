@@ -8,7 +8,7 @@ using Test.Data;
 
 #nullable disable
 
-namespace Test.Migrations
+namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
     partial class NewDBContextModelSnapshot : ModelSnapshot
@@ -191,11 +191,11 @@ namespace Test.Migrations
 
             modelBuilder.Entity("Shop.Api.Data.Size", b =>
                 {
-                    b.Property<Guid>("IdSize")
+                    b.Property<Guid>("IdSizelog")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("ProductsId")
+                    b.Property<Guid>("ProductsId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Qty")
@@ -205,7 +205,7 @@ namespace Test.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("IdSize");
+                    b.HasKey("IdSizelog");
 
                     b.HasIndex("ProductsId");
 
@@ -359,6 +359,12 @@ namespace Test.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -446,7 +452,9 @@ namespace Test.Migrations
                 {
                     b.HasOne("Test.Data.Product", "Products")
                         .WithMany("Sizes")
-                        .HasForeignKey("ProductsId");
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Products");
                 });

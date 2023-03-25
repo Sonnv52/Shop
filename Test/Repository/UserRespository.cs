@@ -13,10 +13,14 @@ using Azure;
 using AutoMapper;
 using ForgotPasswordService.Repository;
 using Shop.Api.Models.CreateModel;
+using Shop.Api.Abtracst;
+using System.Security.Cryptography;
+using Microsoft.AspNetCore.Mvc;
+using Shop.Api.Models.ListLog;
 
 namespace Test.Repository
 {
-    public class UserRespository : IUserRepository
+    public class UserRespository : IUserServices
     {
         private readonly UserManager<UserApp> _userManager;
         private readonly IConfiguration _configuration;
@@ -68,7 +72,7 @@ namespace Test.Repository
             return "true";
     }
 
-        public async Task<string> SignInAsync(SignInUser model)
+        public async Task<AuthenRespone> SignInAsync(SignInUser model)
         {
             var user = await _userManager.FindByNameAsync(model.Email);
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
@@ -84,9 +88,30 @@ namespace Test.Repository
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                 }
                 var token = GetToken(authClaims);
-                return new JwtSecurityTokenHandler().WriteToken(token);
+                var Refreshtoken = await Task.Run(()=> GenerateRefreshToken());
+                user.RefreshToken = Refreshtoken;
+                _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
+                await _userManager.UpdateAsync(user);
+                var ResponeToken = new AuthenRespone
+                {
+                    User = model.Email,
+                    Token = new JwtSecurityTokenHandler().WriteToken(token),
+                    RefreshToken= Refreshtoken
+            };
+                return ResponeToken;
             }
-            return "false";
+            return new AuthenRespone
+            {
+                Token = "false"
+            };
+        }
+        private static string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
         }
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
@@ -95,7 +120,7 @@ namespace Test.Repository
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:ValidIssuer"],
                 audience: _configuration["JWT:ValidAudience"],
-                expires: DateTime.Now.AddHours(3),
+                expires: DateTime.Now.AddMinutes(1),
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
@@ -148,6 +173,82 @@ namespace Test.Repository
             return "success";
         }
 
+        public async Task<AuthenRespone> RefreshTokenAysnc(AuthenRespone authenRefresh)
+        {
+            string? accessToken = authenRefresh.Token;
+            string? refreshToken = authenRefresh.RefreshToken;
+            var principal = await Task.Run(() => GetPrincipalFromExpiredToken(accessToken));
+            if (principal == null)
+            {
+                return new AuthenRespone
+                {
+                    Token = "Invalid"
+                };
+            }
+#pragma warning disable CS8600
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            string username = principal.Identity.Name;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            var user = await _userManager.FindByNameAsync(username);
 
+            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            {
+                return new AuthenRespone
+                {
+                    Token = "Invalid access token or refresh tokenInvalid access token or refresh token"
+                };
+            }
+
+            var newAccessToken = GetToken(principal.Claims.ToList());
+            var newRefreshToken = GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            await _userManager.UpdateAsync(user);
+
+            return new AuthenRespone
+            {
+                User = authenRefresh.User,
+                Token = new JwtSecurityTokenHandler().WriteToken(newAccessToken),
+                RefreshToken = newRefreshToken
+            };
+
+        }
+        private ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
+        {
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
+                ValidateLifetime = false
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
+            if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
+                throw new SecurityTokenException("Invalid token");
+
+            return principal;
+
+        }
+
+        public async Task<ResponseUser> ReVokeAsync(string email)
+        {
+            var user = await _userManager.FindByNameAsync(email);
+            if (user == null) return new ResponseUser
+            {
+                Status = "false",
+                Message = "Can't find this user"
+            };
+
+            user.RefreshToken = null;
+            await _userManager.UpdateAsync(user);
+            return new ResponseUser
+            {
+                Status = "true"
+            };
+        }
     }
 }

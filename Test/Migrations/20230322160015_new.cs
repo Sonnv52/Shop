@@ -3,61 +3,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Test.Migrations
+namespace Shop.Api.Migrations
 {
     /// <inheritdoc />
-    public partial class UserAuthen : Migration
+    public partial class @new : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Bill_Customer_CustomerId",
-                table: "Bill");
-
-            migrationBuilder.DropTable(
-                name: "BillBillDetail");
-
-            migrationBuilder.DropTable(
-                name: "BillDetailProduct");
-
-            migrationBuilder.DropColumn(
-                name: "Password",
-                table: "Customer");
-
-            migrationBuilder.DropColumn(
-                name: "User",
-                table: "Customer");
-
-            migrationBuilder.RenameColumn(
-                name: "CustomerId",
-                table: "Bill",
-                newName: "CustomersId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Bill_CustomerId",
-                table: "Bill",
-                newName: "IX_Bill_CustomersId");
-
-            migrationBuilder.AddColumn<double>(
-                name: "Seleoff",
-                table: "Product",
-                type: "float",
-                nullable: false,
-                defaultValue: 0.0);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "BillId",
-                table: "BillDetail",
-                type: "uniqueidentifier",
-                nullable: true);
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "ProductId",
-                table: "BillDetail",
-                type: "uniqueidentifier",
-                nullable: true);
-
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -78,6 +31,7 @@ namespace Test.Migrations
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Adress = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -96,6 +50,19 @@ namespace Test.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Type",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Type", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -204,15 +171,113 @@ namespace Test.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_BillDetail_BillId",
-                table: "BillDetail",
-                column: "BillId");
+            migrationBuilder.CreateTable(
+                name: "Bill",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    OderDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UserAppId = table.Column<string>(type: "nvarchar(450)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Bill", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Bill_AspNetUsers_UserAppId",
+                        column: x => x.UserAppId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id");
+                });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_BillDetail_ProductId",
-                table: "BillDetail",
-                column: "ProductId");
+            migrationBuilder.CreateTable(
+                name: "Product",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Price = table.Column<double>(type: "float", nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Image = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Seleoff = table.Column<double>(type: "float", nullable: true),
+                    TypeId = table.Column<int>(type: "int", nullable: false),
+                    CreateAt = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Product", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Product_Type_TypeId",
+                        column: x => x.TypeId,
+                        principalTable: "Type",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BillDetail",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Totals = table.Column<int>(type: "int", nullable: false),
+                    BillId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BillDetail", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BillDetail_Bill_BillId",
+                        column: x => x.BillId,
+                        principalTable: "Bill",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_BillDetail_Product_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Product",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImageProducts",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ImagePath = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Caption = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    SortOrder = table.Column<int>(type: "int", nullable: false),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    ProductId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImageProducts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ImageProducts_Product_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Product",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Size",
+                columns: table => new
+                {
+                    IdSizelog = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    size = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Qty = table.Column<int>(type: "int", nullable: false),
+                    ProductsId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Size", x => x.IdSizelog);
+                    table.ForeignKey(
+                        name: "FK_Size_Product_ProductsId",
+                        column: x => x.ProductsId,
+                        principalTable: "Product",
+                        principalColumn: "Id");
+                });
 
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
@@ -253,44 +318,40 @@ namespace Test.Migrations
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_Bill_Customer_CustomersId",
+            migrationBuilder.CreateIndex(
+                name: "IX_Bill_UserAppId",
                 table: "Bill",
-                column: "CustomersId",
-                principalTable: "Customer",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+                column: "UserAppId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_BillDetail_Bill_BillId",
+            migrationBuilder.CreateIndex(
+                name: "IX_BillDetail_BillId",
                 table: "BillDetail",
-                column: "BillId",
-                principalTable: "Bill",
-                principalColumn: "Id");
+                column: "BillId");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_BillDetail_Product_ProductId",
+            migrationBuilder.CreateIndex(
+                name: "IX_BillDetail_ProductId",
                 table: "BillDetail",
-                column: "ProductId",
-                principalTable: "Product",
-                principalColumn: "Id");
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImageProducts_ProductId",
+                table: "ImageProducts",
+                column: "ProductId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Product_TypeId",
+                table: "Product",
+                column: "TypeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Size_ProductsId",
+                table: "Size",
+                column: "ProductsId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropForeignKey(
-                name: "FK_Bill_Customer_CustomersId",
-                table: "Bill");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_BillDetail_Bill_BillId",
-                table: "BillDetail");
-
-            migrationBuilder.DropForeignKey(
-                name: "FK_BillDetail_Product_ProductId",
-                table: "BillDetail");
-
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -307,120 +368,28 @@ namespace Test.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "BillDetail");
+
+            migrationBuilder.DropTable(
+                name: "ImageProducts");
+
+            migrationBuilder.DropTable(
+                name: "Size");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Bill");
+
+            migrationBuilder.DropTable(
+                name: "Product");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
 
-            migrationBuilder.DropIndex(
-                name: "IX_BillDetail_BillId",
-                table: "BillDetail");
-
-            migrationBuilder.DropIndex(
-                name: "IX_BillDetail_ProductId",
-                table: "BillDetail");
-
-            migrationBuilder.DropColumn(
-                name: "Seleoff",
-                table: "Product");
-
-            migrationBuilder.DropColumn(
-                name: "BillId",
-                table: "BillDetail");
-
-            migrationBuilder.DropColumn(
-                name: "ProductId",
-                table: "BillDetail");
-
-            migrationBuilder.RenameColumn(
-                name: "CustomersId",
-                table: "Bill",
-                newName: "CustomerId");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_Bill_CustomersId",
-                table: "Bill",
-                newName: "IX_Bill_CustomerId");
-
-            migrationBuilder.AddColumn<string>(
-                name: "Password",
-                table: "Customer",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.AddColumn<string>(
-                name: "User",
-                table: "Customer",
-                type: "nvarchar(max)",
-                nullable: false,
-                defaultValue: "");
-
-            migrationBuilder.CreateTable(
-                name: "BillBillDetail",
-                columns: table => new
-                {
-                    BillDetailsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BillsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BillBillDetail", x => new { x.BillDetailsId, x.BillsId });
-                    table.ForeignKey(
-                        name: "FK_BillBillDetail_BillDetail_BillDetailsId",
-                        column: x => x.BillDetailsId,
-                        principalTable: "BillDetail",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_BillBillDetail_Bill_BillsId",
-                        column: x => x.BillsId,
-                        principalTable: "Bill",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BillDetailProduct",
-                columns: table => new
-                {
-                    BillDetailsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    ProductsId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BillDetailProduct", x => new { x.BillDetailsId, x.ProductsId });
-                    table.ForeignKey(
-                        name: "FK_BillDetailProduct_BillDetail_BillDetailsId",
-                        column: x => x.BillDetailsId,
-                        principalTable: "BillDetail",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_BillDetailProduct_Product_ProductsId",
-                        column: x => x.ProductsId,
-                        principalTable: "Product",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BillBillDetail_BillsId",
-                table: "BillBillDetail",
-                column: "BillsId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BillDetailProduct_ProductsId",
-                table: "BillDetailProduct",
-                column: "ProductsId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_Bill_Customer_CustomerId",
-                table: "Bill",
-                column: "CustomerId",
-                principalTable: "Customer",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Cascade);
+            migrationBuilder.DropTable(
+                name: "Type");
         }
     }
 }

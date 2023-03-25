@@ -10,10 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using Shop.Api.Enums;
 using Shop.Api.Data;
 using Shop.Api.Models.Products;
+using Shop.Api.Abtracst;
 
 namespace Test.Repository
 {
-    public class ProductRepository: IProductServices
+    public class ProductRepository : IProductServices
     {
         private readonly NewDBContext _dbContext;
         private readonly IMapper _mapper;
@@ -30,7 +31,7 @@ namespace Test.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<PageProduct> GetProductAsync(SearchModel search, PagingSearch paging)
+        public async Task<PageProduct> GetProductAsync(SearchModel search)
         {
             var products = _dbContext.Products.AsQueryable();
             #region sort
@@ -63,8 +64,16 @@ namespace Test.Repository
             }
 
             IEnumerable<ProductT> returns = products.Select(pro => _mapper.Map<ProductT>(pro));
-            var total = returns.Count();
-            returns = returns.ToPagedList(paging.PageIndex, paging.PageSize);
+            var total = 0;
+            if (search.PageSize != 0)
+            {
+                total = returns.Count() / search.PageSize;
+                if (returns.Count() % search.PageSize != 0)
+                {
+                    total += 1;
+                }
+            }
+            returns = returns.ToPagedList(search.PageIndex, search.PageSize);
             foreach (var item in returns)
             {
                 var imagePath = Path.Combine(item.Image);
@@ -84,7 +93,7 @@ namespace Test.Repository
 
         public async Task<string> AddProductAsysnc(ProductAdd product)
         {
-            if(product.Image != null && product.type != 0)
+            if (product.Image != null && product.type != 0)
             {
                 var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
@@ -101,9 +110,9 @@ namespace Test.Repository
                     Description = product.Description != null ? product.Description : "Unknow",
                     Image = imagePath,
                 };
-  
+
                 var type = await _dbContext.Types.FirstOrDefaultAsync(ty => ty.Id == product.type);
-         
+
                 if (type == null)
                 {
                     return "false for category!!";
@@ -124,34 +133,33 @@ namespace Test.Repository
             {
                 return "Product not found!!";
             }
-            foreach(var i in stringSizes.StringSize)
+            foreach (var i in stringSizes.StringSize)
             {
                 var Size = new Size
                 {
-                    IdSize = Guid.NewGuid(),
+                    IdSizelog = Guid.NewGuid(),
                     size = i.SizeProduct,
-                    Qty = i.Qty
+                    Qty = i.Qty,
+                    Products = product
                 };
                 try
                 {
                     await _dbContext.Sizes.AddAsync(Size);
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
                     return $"false to add for {product.Name}";
                 }
             }
-             await _dbContext.SaveChangesAsync();
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
             return "Suggest!!";
         }
-
-
-        /* private async Task<string> SaveFile(IFormFile file)
-{
-    var originalFileName = ContentDispositionHeaderValue.Parse(file.ContentDisposition).FileName.TrimEnd('"');
-    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(originalFileName)}";
-    await _storageService.SaveFileAsync(file.OpenReadStream(), fileName);
-    return "/" + USER_CONTENT_FOLDER_NAME + "/" + fileName;
-
-}*/
     }
 }

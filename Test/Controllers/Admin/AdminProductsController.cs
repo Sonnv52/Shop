@@ -5,10 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Shop.Api.Abtracst;
 using Shop.Api.Models.CreateModel;
 using Shop.Api.Models.Products;
 using Test.Data;
+using System.Security.Claims;
 using Test.Repository;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Shop.Api.Controllers.Admin
 {
@@ -63,8 +66,8 @@ namespace Shop.Api.Controllers.Admin
         }
         // POST: api/AdminProducts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpPost("Add/Product")]
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<ActionResult<Product>> PostProduct([FromForm] ProductAdd product)
         {
             string result = await _productServices.AddProductAsysnc(product);
@@ -83,7 +86,12 @@ namespace Shop.Api.Controllers.Admin
         [HttpPut("addSize")]
         public async Task<IActionResult> AddSizeAsync([FromBody] AddSize<StringSize> stringSizes)
         {
-            return Ok();
+            var result = await _productServices.AddSizeProductAsync(stringSizes);
+            if(result != "Suggest!!")
+            {
+                return StatusCode(450,result);
+            }
+            return Ok(result);
         }
         // DELETE: api/AdminProducts/5
         [HttpDelete("{id}")]
