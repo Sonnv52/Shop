@@ -43,7 +43,7 @@ namespace Test.Repository
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
             if (userExists != null)
-                return "Exsit";
+                return "Exsit!!!";
 
             UserApp user = new()
             {
