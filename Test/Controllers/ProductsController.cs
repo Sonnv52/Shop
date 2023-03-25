@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Newtonsoft.Json;
+using Shop.Api.Abtracst;
 using Shop.Api.Models.CreateModel;
 using StackExchange.Redis;
 using Test.Data;
@@ -36,18 +37,14 @@ namespace Test.Controllers
         }
 
         // GET: api/Products
-        [HttpPost("GetProduct")]
+        [HttpGet("GetProduct")]
         
-        public async Task<ActionResult<PageProduct>> GetProducts([FromBody] SearchModel? search, [FromQuery] PagingSearch? paging)
+        public async Task<ActionResult<PageProduct>> GetProducts([FromQuery] SearchModel? search)
         {   
-            if (paging == null)
-            {
-                return StatusCode(401, "Expected paging!!!");
-                
-            }
+           
             try
             {
-                var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{paging?.PageSize}:{paging?.PageIndex}";
+                var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
                 // Check if the search query is already cached in Redis
 
                 var cachedResult = await _cache.GetStringAsync(cacheKey);
@@ -57,7 +54,7 @@ namespace Test.Controllers
                     return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
                 }
                 // If the result is not cached, execute the search query
-                var result = await _productservices.GetProductAsync(search, paging);
+                var result = await _productservices.GetProductAsync(search);
 
                 // Serialize the result and cache it in Redis for 1 hour
                 var serializedResult = JsonConvert.SerializeObject(result);
@@ -72,7 +69,7 @@ namespace Test.Controllers
             catch (Exception ex) {  
                  Console.WriteLine(ex);
                 }
-            var results = await _productservices.GetProductAsync(search, paging);
+            var results = await _productservices.GetProductAsync(search);
             // Return the result
             return Ok(results);
         }

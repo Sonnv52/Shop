@@ -13,6 +13,7 @@ using AutoMapper;
 using ForgotPasswordService.Repository;
 using System.Security.Principal;
 using StackExchange.Redis;
+using Shop.Api.Abtracst;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,34 +22,30 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
+builder.Services.AddSwaggerGen(option =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Title = "Test",
-        Version = "v1"
-    });
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Test",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Test"
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
     });
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecurityScheme
             {
                 Reference = new OpenApiReference
                 {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "I"
+                    Type=ReferenceType.SecurityScheme,
+                    Id="Bearer"
                 }
             },
-            new string[] {}
+            new string[]{}
         }
     });
 });
@@ -92,7 +89,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
     options.Configuration = builder.Configuration["RedisCacheServerUrl"];
     options.InstanceName = "Product";
 });
-builder.Services.AddScoped<IUserRepository, UserRespository>();
+builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddIdentity<UserApp, IdentityRole>()

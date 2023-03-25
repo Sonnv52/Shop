@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.Extensions.Caching.Distributed;
+using Shop.Api.Abtracst;
 using System.Security.Claims;
 using Test.Data;
 using Test.Models;
@@ -17,13 +18,13 @@ namespace Test.Controllers
     [ApiController]
     public class AccountsController : ControllerBase
     {   
-        private readonly IUserRepository _userRepository;
+        private readonly IUserServices _userRepository;
         private readonly NewDBContext _newDBContext;
         private IHttpContextAccessor _httpContextAccessor;
         private readonly UserManager<UserApp> _userManager;
         private readonly IAccount _account;
         private readonly ILogger<AccountsController> _logger;
-        public AccountsController(IUserRepository userRepository, NewDBContext newDBContext, IHttpContextAccessor httpContextAccessor,
+        public AccountsController(IUserServices userRepository, NewDBContext newDBContext, IHttpContextAccessor httpContextAccessor,
             UserManager<UserApp> userManager, IAccount account, ILogger<AccountsController> logger)
         {
             _userRepository = userRepository;
@@ -39,7 +40,7 @@ namespace Test.Controllers
             var result = await _userRepository.SignUpAsync(user);
             if (result == "true")
             {
-                return Ok();
+                return Ok("Suggest!!");
             }
             if(result == "Exsit")
             {
@@ -68,17 +69,12 @@ namespace Test.Controllers
         {
             var result = await _userRepository.SignInAsync(user);
             var refreshtoken = "";
-            if (result == "false")
+            if (result.Token == "false")
             {
                 return StatusCode(400, "Password or Email incorect"); ;
             }
-            
-            var auth = new AuthenRespone{
-                User = user.Email,
-                Token = result,
-                RefreshToken= refreshtoken
-            };
-            return Ok(auth);
+           
+            return Ok(result);
         }
 
         [HttpGet("profile")]
@@ -123,12 +119,26 @@ namespace Test.Controllers
             return Ok(result);
         }
 
-        [HttpGet("test")]
-        public async Task<IActionResult> Getnew()
+        [HttpPost("RefreshToken")]
+        public async Task<IActionResult> RefreshTokenAsync(AuthenRespone authRefresh)
         {
-            
-            string a= await _account.GetAccount("1234342");
-            return Ok(a);
+            if(authRefresh is null)
+            {
+                return BadRequest();
+            }
+            var result = await _userRepository.RefreshTokenAysnc(authRefresh);
+            if(result.RefreshToken == null) {
+                return StatusCode(409, result.Token);
+            }
+            return Ok(result);
+        }
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpPost("Revoke")]
+        public async Task<IActionResult> ReVokeAsync()
+        {
+            var userName = User.FindFirstValue(ClaimTypes.Name);
+            var result = await _userRepository.ReVokeAsync(userName);
+            return Ok(result);
         }
     }
 }

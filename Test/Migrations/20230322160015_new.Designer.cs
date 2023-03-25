@@ -9,11 +9,11 @@ using Test.Data;
 
 #nullable disable
 
-namespace Test.Migrations
+namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    [Migration("20230322134536_add-size-new")]
-    partial class addsizenew
+    [Migration("20230322160015_new")]
+    partial class @new
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -194,11 +194,9 @@ namespace Test.Migrations
 
             modelBuilder.Entity("Shop.Api.Data.Size", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("IdSizelog")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ProductsId")
                         .HasColumnType("uniqueidentifier");
@@ -210,7 +208,7 @@ namespace Test.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("IdSizelog");
 
                     b.HasIndex("ProductsId");
 

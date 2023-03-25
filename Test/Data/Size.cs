@@ -8,10 +8,10 @@ namespace Shop.Api.Data
     public class Size
     {
         [Key]
-        public Guid IdSize { get; set; }
+        public Guid IdSizelog { get; set; }
         [Required(ErrorMessage ="Don't know")]
         public string? size { get; set; }    
         public int Qty { get; set; }
-        public virtual Product? Products { get; set;}
+        public virtual Product Products { get; set; }
     }
 }
