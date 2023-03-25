@@ -50,10 +50,16 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 builder.Services.AddMvc();
-builder.Services.AddDbContext<NewDBContext>(options =>
-options.UseSqlServer(
-    builder.Configuration.GetConnectionString("ShopConnect")));
-
+var serverVersion = new MySqlServerVersion(new Version(8, 0, 29));
+builder.Services.AddDbContext<NewDBContext>(
+            dbContextOptions => dbContextOptions
+                .UseMySql(builder.Configuration["MysqlCt"], serverVersion)
+                // The following three options help with debugging, but should
+                // be changed or removed for production.
+                .LogTo(Console.WriteLine, LogLevel.Information)
+                .EnableSensitiveDataLogging()
+                .EnableDetailedErrors()
+        );
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
