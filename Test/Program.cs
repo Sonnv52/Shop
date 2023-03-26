@@ -14,6 +14,7 @@ using ForgotPasswordService.Repository;
 using System.Security.Principal;
 using StackExchange.Redis;
 using Shop.Api.Abtracst;
+using Shop.Api.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +93,9 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
+builder.Services.AddScoped<IImageServices, ImageResponsitory>();
+builder.Services.AddTransient< ITest>();
+
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
     .AddDefaultTokenProviders();

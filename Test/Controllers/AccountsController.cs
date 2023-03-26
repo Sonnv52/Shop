@@ -68,7 +68,9 @@ namespace Test.Controllers
         public async Task<IActionResult> SignInAsync(SignInUser user)
         {
             var result = await _userRepository.SignInAsync(user);
+#pragma warning disable CS0219 // Variable is assigned but its value is never used
             var refreshtoken = "";
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
             if (result.Token == "false")
             {
                 return StatusCode(400, "Password or Email incorect"); ;
