@@ -100,7 +100,6 @@ builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
-builder.Services.AddTransient< ITest>();
 
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
