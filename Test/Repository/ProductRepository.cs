@@ -11,6 +11,9 @@ using Shop.Api.Enums;
 using Shop.Api.Data;
 using Shop.Api.Models.Products;
 using Shop.Api.Abtracst;
+using Shop.Api.Models;
+using Microsoft.CodeAnalysis;
+using Shop.Api.Repository;
 
 namespace Test.Repository
 {
@@ -19,16 +22,30 @@ namespace Test.Repository
         private readonly NewDBContext _dbContext;
         private readonly IMapper _mapper;
         public static IWebHostEnvironment _environment;
-        public ProductRepository(NewDBContext dbContext, IMapper mapper, IWebHostEnvironment environment)
+        private readonly IImageServices _imageServices;
+        public ProductRepository(IImageServices imageServices, NewDBContext dbContext, IMapper mapper, IWebHostEnvironment environment)
         {
             _dbContext = dbContext;
             _mapper = mapper;
             _environment = environment;
+            _imageServices = imageServices;
         }
 
-        public Task<Product> GetOneProductAsync(Guid id)
+        public async Task<ProductDTO> GetOneProductAsync(Guid id)
         {
-            throw new NotImplementedException();
+
+             var product = _dbContext.Products.Include(p => p.Sizes).FirstOrDefault(p => p.Id == id);
+             var size = product?.Sizes.Select(s => _mapper.Map<SizeDTO>(s)).ToList();
+            return new ProductDTO
+            {
+                Id = product.Id ,
+                Name = product.Name,
+                Description= product.Description,
+                Price = product.Price,
+                Image = product.Image,
+                IM = await _imageServices.ParseAsync(product.Image),
+                Sizes = size
+            };
         }
 
         public async Task<PageProduct> GetProductAsync(SearchModel search)
@@ -102,6 +119,7 @@ namespace Test.Repository
                     await product.Image.CopyToAsync(stream);
                 }
 
+#pragma warning disable CS8629 // Nullable value type may be null.
                 var pro = new Product
                 {
                     Id = Guid.NewGuid(),
@@ -110,6 +128,7 @@ namespace Test.Repository
                     Description = product.Description != null ? product.Description : "Unknow",
                     Image = imagePath,
                 };
+#pragma warning restore CS8629 // Nullable value type may be null.
 
                 var type = await _dbContext.Types.FirstOrDefaultAsync(ty => ty.Id == product.type);
 

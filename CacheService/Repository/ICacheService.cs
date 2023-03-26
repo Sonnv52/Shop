@@ -9,6 +9,6 @@ namespace CacheService.Repository
 {
     public interface ICacheService
     {
-        public Task<PagingSearch> ResetProductAsysn(string key);
+        public Task ResetProductAsysn(string key);
     }
 }

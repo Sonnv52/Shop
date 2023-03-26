@@ -10,6 +10,7 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Newtonsoft.Json;
 using Shop.Api.Abtracst;
+using Shop.Api.Models;
 using Shop.Api.Models.CreateModel;
 using StackExchange.Redis;
 using Test.Data;
@@ -18,7 +19,7 @@ using Test.Repository;
 
 namespace Test.Controllers
 {
-    
+
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -27,7 +28,7 @@ namespace Test.Controllers
         private readonly IProductServices _productservices;
         private readonly IDistributedCache _cache;
         private readonly IHttpContextAccessor _httpContextAccessor;
-      
+
         public ProductsController(NewDBContext context, IProductServices productservice, IDistributedCache cache, IHttpContextAccessor httpContextAccessor)
         {
             _context = context;
@@ -38,10 +39,9 @@ namespace Test.Controllers
 
         // GET: api/Products
         [HttpGet("GetProduct")]
-        
+
         public async Task<ActionResult<PageProduct>> GetProducts([FromQuery] SearchModel? search)
-        {   
-           
+        {
             try
             {
                 var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
@@ -54,7 +54,7 @@ namespace Test.Controllers
                     return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
                 }
                 // If the result is not cached, execute the search query
-                var result = await _productservices.GetProductAsync(search);
+                var result = await _productservices.GetProductAsync(search!);
 
                 // Serialize the result and cache it in Redis for 1 hour
                 var serializedResult = JsonConvert.SerializeObject(result);
@@ -66,19 +66,24 @@ namespace Test.Controllers
                 });
                 return Ok(result);
             }
-            catch (Exception ex) {  
-                 Console.WriteLine(ex);
-                }
-            var results = await _productservices.GetProductAsync(search);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+            var results = await _productservices.GetProductAsync(search!);
             // Return the result
             return Ok(results);
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(Guid id)
+        public async Task<ActionResult<ProductDTO>> GetProduct(Guid id)
         {
-           return Ok();
+#pragma warning disable CS8073 // The result of the expression is always the same since a value of this type is never equal to 'null'
+            if (id == null) throw new ArgumentNullException("id");
+#pragma warning restore CS8073 // The result of the expression is always the same since a value of this type is never equal to 'null'
+            var result = await _productservices.GetOneProductAsync(id);
+            return result;
         }
 
         // PUT: api/Products/5
@@ -114,7 +119,7 @@ namespace Test.Controllers
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-       
+
         // DELETE: api/Products/5
         [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
@@ -135,6 +140,6 @@ namespace Test.Controllers
         {
             return _context.Products.Any(e => e.Id == id);
         }
-        
+
     }
 }
