@@ -42,7 +42,7 @@ namespace Test.Controllers
 
         public async Task<ActionResult<PageProduct>> GetProducts([FromQuery] SearchModel? search)
         {
-            try
+            /*try
             {
                 var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
                 // Check if the search query is already cached in Redis
@@ -69,7 +69,7 @@ namespace Test.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-            }
+            }*/
             var results = await _productservices.GetProductAsync(search!);
             // Return the result
             return Ok(results);

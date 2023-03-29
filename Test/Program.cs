@@ -52,15 +52,10 @@ builder.Services.AddSwaggerGen(option =>
 });
 builder.Services.AddMvc();
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 29));
+var connectionString = builder.Configuration.GetConnectionString("MysqlCt");
 builder.Services.AddDbContext<NewDBContext>(
-            dbContextOptions => dbContextOptions
-                .UseMySql(builder.Configuration["MysqlCt"], serverVersion)
-                // The following three options help with debugging, but should
-                // be changed or removed for production.
-                .LogTo(Console.WriteLine, LogLevel.Information)
-                .EnableSensitiveDataLogging()
-                .EnableDetailedErrors()
-        );
+          dbContextOptions => dbContextOptions
+              .UseMySql(connectionString, serverVersion));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
