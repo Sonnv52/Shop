@@ -11,6 +11,5 @@ namespace Shop.Api.Models.CreateModel
         public double? Price { get; set; }
         public string? Description { get; set; }
         public IFormFile? Image { get; set; }
-        public int type { get; set; } = 0;
     }
 }

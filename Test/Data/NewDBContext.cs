@@ -12,7 +12,6 @@ namespace Test.Data
         public DbSet<Bill> Bills { get; set; }
         public DbSet<BillDetail> BillDetails { get; set; }
         public DbSet<Product> Products { get; set; }
-        public DbSet<Type> Types { get; set; }
         public DbSet<ImageProducts> ImageProducts { get; set; }
         public DbSet<Size> Sizes { get; set; }  
     }

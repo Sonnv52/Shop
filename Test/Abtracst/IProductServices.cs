@@ -12,5 +12,6 @@ namespace Shop.Api.Abtracst
         public Task<ProductDTO> GetOneProductAsync(Guid id);
         public Task<string> AddProductAsysnc(ProductAdd product);
         public Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes);
+        public Task<string> AddProductAzureAsync(ProductAdd product);
     }
 }
