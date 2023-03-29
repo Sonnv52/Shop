@@ -1,10 +1,17 @@
-﻿using Shop.Api.Abtracst;
+﻿using Azure.Storage.Blobs;
+using Shop.Api.Abtracst;
 using Shop.Api.Models.ListLog;
+using Test.Data;
 
 namespace Shop.Api.Repository
 {
     public class ImageResponsitory : IImageServices
     {
+        private readonly IConfiguration _configuration;
+        public ImageResponsitory(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
         public Task<ImageLog> AddAsync()
         {
             throw new NotImplementedException();
@@ -18,7 +25,22 @@ namespace Shop.Api.Repository
             {
                 return await System.IO.File.ReadAllBytesAsync(imagePath);
             }
+
             return null;
+        }
+
+        public async Task<string> PostImageToAzureAsync(IFormFile file)
+        {
+
+            BlobContainerClient blod = new BlobContainerClient(_configuration["AzureString"], "shoimage");
+            var FileName = $"{file.FileName}-{Guid.NewGuid()}";
+            using (var stream = new MemoryStream())
+            {
+                await file.CopyToAsync(stream);
+                stream.Position = 0;
+                await blod.UploadBlobAsync(FileName, stream);
+            }
+            return $"{_configuration["LinkAzure"]}-{FileName}";
         }
 
         public Task<ImageLog> RemoveAsync()

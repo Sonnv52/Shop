@@ -67,7 +67,7 @@ namespace Shop.Api.Controllers.Admin
         // POST: api/AdminProducts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("Add/Product")]
-        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+       // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<ActionResult<Product>> PostProduct([FromForm] ProductAdd product)
         {
             string result = await _productServices.AddProductAsysnc(product);

@@ -75,8 +75,7 @@ namespace Test.Repository
             #endregion
             if (!String.IsNullOrEmpty(search.key))
             {
-                products = products.Where(pr => pr.Name.Contains(search.key) || pr.Type.Name.Contains(search.key) ||
-                pr.Type.Id.ToString().Equals(search.key));
+                products = products.Where(pr => pr.Name.Contains(search.key));
 
             }
 
@@ -110,7 +109,7 @@ namespace Test.Repository
 
         public async Task<string> AddProductAsysnc(ProductAdd product)
         {
-            if (product.Image != null && product.type != 0)
+            if (product.Image != null)
             {
                 var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
@@ -130,14 +129,6 @@ namespace Test.Repository
                 };
 #pragma warning restore CS8629 // Nullable value type may be null.
 
-                var type = await _dbContext.Types.FirstOrDefaultAsync(ty => ty.Id == product.type);
-
-                if (type == null)
-                {
-                    return "false for category!!";
-                }
-
-                pro.Type = type;
                 var i = await _dbContext.Products.AddAsync(pro);
                 await _dbContext.SaveChangesAsync();
                 return pro.Id.ToString();
@@ -179,6 +170,11 @@ namespace Test.Repository
                 return ex.Message;
             }
             return "Suggest!!";
+        }
+
+        public Task<string> AddProductAzureAsync(ProductAdd product)
+        {
+            throw new NotImplementedException();
         }
     }
 }
