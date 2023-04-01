@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Test.Data;
 
-namespace Shop.Api.Data
+namespace Test.Data
 {
     [Table("Size")]
     public class Size

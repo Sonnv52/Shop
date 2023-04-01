@@ -2,7 +2,7 @@
 
 namespace Shop.Api.Models.ListLog
 {
-    public class ResponseUser : ResponeModel<string>
+    public class ResponseUser : ResponeModel<string, string>
     {
         public override string Log(string message)
         {

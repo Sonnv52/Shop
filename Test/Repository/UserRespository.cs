@@ -240,7 +240,7 @@ namespace Test.Repository
             if (user == null) return new ResponseUser
             {
                 Status = "false",
-                Message = "Can't find this user"
+                Message = new List<string>()
             };
 
             user.RefreshToken = null;
@@ -249,6 +249,12 @@ namespace Test.Repository
             {
                 Status = "true"
             };
+        }
+
+        public async Task<UserApp> GetUserByEmailAsync(string email)
+        {
+            var user = await _userManager.FindByNameAsync(email);
+            return user;
         }
     }
 }

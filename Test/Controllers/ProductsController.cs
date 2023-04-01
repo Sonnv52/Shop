@@ -46,7 +46,6 @@ namespace Test.Controllers
             {
                 var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
                 // Check if the search query is already cached in Redis
-
                 var cachedResult = await _cache.GetStringAsync(cacheKey);
                 if (cachedResult != null)
                 {

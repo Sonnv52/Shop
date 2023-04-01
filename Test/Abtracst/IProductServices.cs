@@ -13,5 +13,7 @@ namespace Shop.Api.Abtracst
         public Task<string> AddProductAsysnc(ProductAdd product);
         public Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes);
         public Task<string> AddProductAzureAsync(ProductAdd product);
+        public Task<string> GetProductName(Guid id);
+        public Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size);
     }
 }

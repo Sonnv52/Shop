@@ -1,7 +1,10 @@
-﻿namespace Shop.Api.Abtracst
+﻿using Shop.Api.Models.ListLog;
+using Shop.Api.Models.Order;
+
+namespace Shop.Api.Abtracst
 {
     public interface IOrderServices
     {
-        public Task<Guid> OrderAsync();
+        public Task<OrderLog> OrderAsync(OrderRequest request, string email);
     }
 }

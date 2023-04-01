@@ -10,6 +10,8 @@ namespace Test.Data
         [Key]
         public Guid Id { get; set; }
         public DateTime OderDate { get; set; }
+        public string Adress { get; set; }
+        public string Phone { get; set; }
 
         public virtual ICollection<BillDetail> BillDetails { get; set; }
         public UserApp UserApp { get; set; }

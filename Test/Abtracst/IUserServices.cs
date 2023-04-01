@@ -1,4 +1,5 @@
 ﻿using Shop.Api.Models.ListLog;
+using Test.Data;
 using Test.Models;
 
 namespace Shop.Api.Abtracst
@@ -12,5 +13,6 @@ namespace Shop.Api.Abtracst
         public Task<string> SetProfileUser(SignUpUser user, string mail);
         public Task<AuthenRespone> RefreshTokenAysnc(AuthenRespone authenRefresh);
         public Task<ResponseUser> ReVokeAsync(string email);
+        public Task<UserApp> GetUserByEmailAsync(string email);
     }
 }
