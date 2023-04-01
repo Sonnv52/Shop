@@ -2,7 +2,7 @@
 
 namespace Shop.Api.Models.ListLog
 {
-    public class ImageLog : ResponeModel<string>
+    public class ImageLog : ResponeModel<string,string>
     {
         public override string Log(string message)
         {

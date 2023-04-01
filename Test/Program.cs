@@ -51,6 +51,7 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 builder.Services.AddMvc();
+// Add SQL Config
 builder.Services.AddDbContext<NewDBContext>(options =>
 options.UseSqlServer(
     builder.Configuration.GetConnectionString("ShopConnect")));
@@ -87,13 +88,15 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration["RedisCacheServerUrl"];
+    options.Configuration = builder.Configuration["azureCache"];
     options.InstanceName = "Product";
 });
+
 builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
+builder.Services.AddScoped<IOrderServices, OrderResponsitory>();
 
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
@@ -114,6 +117,14 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/error-development");
+}
+else
+{
+    app.UseExceptionHandler("/error");
+}
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

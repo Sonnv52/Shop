@@ -73,7 +73,7 @@ namespace Test.Controllers
 #pragma warning restore CS0219 // Variable is assigned but its value is never used
             if (result.Token == "false")
             {
-                return StatusCode(400, "Password or Email incorect"); ;
+                return StatusCode(500, "Password or Email incorect"); ;
             }
            
             return Ok(result);
@@ -112,11 +112,11 @@ namespace Test.Controllers
            string result = await _userRepository.SetProfileUser(user, userName);
             if(result == null)
             {
-                return StatusCode(400, "False to save!!");
+                return StatusCode(500, "False to save!!");
             }
             if(result == "false")
             {
-                return StatusCode(401, "False to save!!");
+                return StatusCode(500, "False to save!!");
             }
             return Ok(result);
         }
@@ -130,7 +130,7 @@ namespace Test.Controllers
             }
             var result = await _userRepository.RefreshTokenAysnc(authRefresh);
             if(result.RefreshToken == null) {
-                return StatusCode(409, result.Token);
+                return StatusCode(500, result.Token);
             }
             return Ok(result);
         }

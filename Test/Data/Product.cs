@@ -10,6 +10,7 @@ namespace Test.Data
         [Key]
         public Guid Id { get; set; }
         [Required]
+        [StringLength(100)]
         public string Name { get; set; }
         [Required]
         public double Price { get; set; }

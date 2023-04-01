@@ -176,5 +176,17 @@ namespace Test.Repository
         {
             throw new NotImplementedException();
         }
+
+        public async Task<string> GetProductName(Guid id)
+        {
+            Product? product = await _dbContext.Products.FindAsync(id);
+            string? name = product?.Name;
+            return name ?? string.Empty;
+        }
+
+        public  Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

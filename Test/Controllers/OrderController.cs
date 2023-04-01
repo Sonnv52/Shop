@@ -2,10 +2,17 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using Shop.Api.Abtracst;
+using Shop.Api.Data;
 using Shop.Api.Models;
 using Shop.Api.Models.CreateModel;
 using Shop.Api.Models.Order;
+using Shop.Api.Models.Products;
+using StackExchange.Redis;
 using System.Net.WebSockets;
+using System.Text.Json.Nodes;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Test.Data;
 
 namespace Shop.Api.Controllers
@@ -16,25 +23,28 @@ namespace Shop.Api.Controllers
     {
         private readonly NewDBContext _dbContext;
         private readonly IConfiguration _configuration;
+        private readonly IOrderServices _orderServices;
 
-        public OrderController(NewDBContext dBContext, IConfiguration configuration)
+        public OrderController(NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
         {
             _dbContext = dBContext;
             _configuration = configuration;
+            _orderServices = orderServices;
         }
         [HttpPost]
         [Route("Checkout")]
-        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request)
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest  request)
         {
-            return Ok();
+            string emailUser = User.FindFirstValue(ClaimTypes.Name);
+             var result = await _orderServices.OrderAsync(request, emailUser);
+            if (result.Status)
+            {
+                return Ok(result);
+            }
+            return StatusCode(430,result.Message);
         }
 
-        [HttpGet]
-        [Route("getimage")]
-        public async Task<IActionResult> GetImageAsync()
-        {
-            return Ok();
-        }
         [HttpPost("Post")]
         public async Task<IActionResult> SaveImage([FromForm] ProductAdd product)
         {
@@ -65,5 +75,6 @@ namespace Shop.Api.Controllers
 
             return File(stream, response.Value.ContentType);
         }
+      
     }
 }

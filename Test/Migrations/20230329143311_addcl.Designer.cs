@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Test.Data;
 
@@ -11,9 +12,11 @@ using Test.Data;
 namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    partial class NewDBContextModelSnapshot : ModelSnapshot
+    [Migration("20230329143311_addcl")]
+    partial class addcl
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -189,22 +192,37 @@ namespace Shop.Api.Migrations
                     b.ToTable("ImageProducts");
                 });
 
+            modelBuilder.Entity("Shop.Api.Data.Size", b =>
+                {
+                    b.Property<Guid>("IdSizelog")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Qty")
+                        .HasColumnType("int");
+
+                    b.Property<string>("size")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("IdSizelog");
+
+                    b.HasIndex("ProductsId");
+
+                    b.ToTable("Size");
+                });
+
             modelBuilder.Entity("Test.Data.Bill", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Adress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("OderDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("UserAppId")
                         .HasColumnType("nvarchar(450)");
@@ -227,9 +245,6 @@ namespace Shop.Api.Migrations
 
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Size")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Totals")
                         .HasColumnType("int");
@@ -274,29 +289,6 @@ namespace Shop.Api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Product");
-                });
-
-            modelBuilder.Entity("Test.Data.Size", b =>
-                {
-                    b.Property<Guid>("IdSizelog")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("ProductsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Qty")
-                        .HasColumnType("int");
-
-                    b.Property<string>("size")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("IdSizelog");
-
-                    b.HasIndex("ProductsId");
-
-                    b.ToTable("Size");
                 });
 
             modelBuilder.Entity("Test.Data.UserApp", b =>
@@ -438,6 +430,17 @@ namespace Shop.Api.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("Shop.Api.Data.Size", b =>
+                {
+                    b.HasOne("Test.Data.Product", "Products")
+                        .WithMany("Sizes")
+                        .HasForeignKey("ProductsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Products");
+                });
+
             modelBuilder.Entity("Test.Data.Bill", b =>
                 {
                     b.HasOne("Test.Data.UserApp", "UserApp")
@@ -449,28 +452,13 @@ namespace Shop.Api.Migrations
 
             modelBuilder.Entity("Test.Data.BillDetail", b =>
                 {
-                    b.HasOne("Test.Data.Bill", "Bill")
+                    b.HasOne("Test.Data.Bill", null)
                         .WithMany("BillDetails")
                         .HasForeignKey("BillId");
 
-                    b.HasOne("Test.Data.Product", "Product")
+                    b.HasOne("Test.Data.Product", null)
                         .WithMany("BillDetails")
                         .HasForeignKey("ProductId");
-
-                    b.Navigation("Bill");
-
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Test.Data.Size", b =>
-                {
-                    b.HasOne("Test.Data.Product", "Products")
-                        .WithMany("Sizes")
-                        .HasForeignKey("ProductsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Products");
                 });
 
             modelBuilder.Entity("Test.Data.Bill", b =>
