@@ -51,11 +51,9 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 builder.Services.AddMvc();
-var serverVersion = new MySqlServerVersion(new Version(8, 0, 29));
-var connectionString = builder.Configuration.GetConnectionString("MysqlCt");
-builder.Services.AddDbContext<NewDBContext>(
-          dbContextOptions => dbContextOptions
-              .UseMySql(connectionString, serverVersion));
+builder.Services.AddDbContext<NewDBContext>(options =>
+options.UseSqlServer(
+    builder.Configuration.GetConnectionString("ShopConnect")));
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -95,6 +93,7 @@ builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
+builder.Services.AddScoped<IOrderServices, OrderResponsitory>();
 
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
