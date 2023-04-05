@@ -6,22 +6,21 @@ using Shop.Api.Abtracst;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Order;
 using Test.Data;
+using Test.Enums;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Shop.Api.Repository
 {
-    public class OrderResponsitory : IOrderServices<string>
+    public class OrderResponsitory : IOrderServices
     {
         private readonly NewDBContext _dbContext;
-        private readonly IPublishEndpoint _publishEndpoint;
         private readonly IUserServices _userServices;
         private readonly IProductServices _productServices;
-        public OrderResponsitory(NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPublishEndpoint publishEndpoint)
+        public OrderResponsitory(NewDBContext dbContext, IUserServices userServices, IProductServices productServices)
         {
             _dbContext = dbContext;
             _userServices = userServices;
             _productServices = productServices;
-            _publishEndpoint = publishEndpoint;
         }
 
         public async Task<double> GetPriceAsync(IList<ProductsRequest?> products)
@@ -32,7 +31,7 @@ namespace Shop.Api.Repository
                 if (product == null) continue;
                 var productFind = await _dbContext.Products.FindAsync(product?.id);
                 var qty = await _productServices.CheckQtyAsync(product.Qty, product.id, product.Size);
-                if (qty <0 ) return 0.0;
+                if (qty < 0) return 0.0;
                 total += productFind?.Price * product?.Qty;
             }
             return (double)total;
@@ -56,12 +55,12 @@ namespace Shop.Api.Repository
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             foreach (var Order in request.Products)
             {
-                if(Order != null)
+                if (Order == null)
                 {
                     continue;
                 }
                 var product = _dbContext?.Products
-                .Join(_dbContext.Sizes.Where(s => s.Qty >= Order.Qty && s.size == Order.Size),
+                .Join(_dbContext.Sizes.Where(s => s.size == Order.Size),
                 p => p.Id,
                 s => s.Products.Id,
                 (p, s) => new { Product = p, Size = s })
@@ -71,7 +70,7 @@ namespace Shop.Api.Repository
                 if (pr == null)
                 {
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    logFail?.Message?.Add( $"Fail to order item{await _productServices.GetProductName(Order.id)}");
+                    logFail?.Message?.Add($"Fail to order item{await _productServices.GetProductName(Order.id)}");
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
                     return logFail ?? new OrderLog();
                 }
@@ -85,29 +84,27 @@ namespace Shop.Api.Repository
                         Totals = Order.Qty,
                         Bill = bill
                     };
-                    try
-                    {
-                        var ok = await _productServices.UpdateQuantySizeAsync(Order.Qty, pr.Id, Order.Size ?? "NO");
-                        if (!ok)
+                        var ok = await _productServices.CheckQtyAsync(Order.Qty, pr.Id, Order.Size ?? "NO");
+                        if (ok < 0)
                         {
                             return new OrderLog
                             {
-                                Message = new List<string> { $"Fail to order item{await _productServices.GetProductName(Order.id)}" }
+                                Message = new List<string> { $"Fail to order item {await _productServices.GetProductName(Order.id)} với size là {Order.Size} chỉ còn {ok + Order.Qty}" },
+                                Status = false
                             };
                         }
                         await _dbContext.BillDetails.AddAsync(billDetail);
-                    }
-                    catch(Exception ex)
-                    {
-                        throw new Exception(ex.ToString());
-                    }
                 }
             }
-            try
+            foreach (var Order in request.Products)
             {
-                await _dbContext.Bills.AddAsync(bill);
+                await _productServices.UpdateQuantySizeAsync(Order.Qty, Order.id, Order.Size ?? "NO");
+            }
+                try
+            {
                 await _dbContext.SaveChangesAsync();
-            }catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 throw new Exception(ex.ToString());
             }

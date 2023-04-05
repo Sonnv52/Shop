@@ -27,21 +27,17 @@ namespace Shop.Api.Controllers
     {
         private readonly NewDBContext _dbContext;
         private readonly IConfiguration _configuration;
-        private readonly IOrderServices<string> _orderServices;
-        public readonly IPublishEndpoint _publishEndpoint;
-        private readonly IBus _bus;
-        public OrderController(IBus bus, IPublishEndpoint publishEndpoint, NewDBContext dBContext, IConfiguration configuration, IOrderServices<string> orderServices)
+        private readonly IOrderServices _orderServices;
+        public OrderController( NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
         {
             _dbContext = dBContext;
             _configuration = configuration;
             _orderServices = orderServices;
-            _publishEndpoint = publishEndpoint;
-            _bus = bus;
         }
         [HttpPost]
         [Route("Checkout")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request, [FromHeader(Name = "username")] string userName = null)
+        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request)
         {
             string emailUser = User.FindFirstValue(ClaimTypes.Name);
             var result = await _orderServices.OrderAsync(request, emailUser);
@@ -63,6 +59,7 @@ namespace Shop.Api.Controllers
             var result = await _orderServices.GetPriceAsync(products);
             return Ok(result);
         }
+
         [HttpPost("Post")]
         public async Task<IActionResult> SaveImage([FromForm] ProductAdd product)
         {

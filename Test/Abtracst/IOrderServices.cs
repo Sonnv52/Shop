@@ -3,7 +3,7 @@ using Shop.Api.Models.Order;
 
 namespace Shop.Api.Abtracst
 {
-    public interface IOrderServices<T>
+    public interface IOrderServices
     {
         public Task<OrderLog> OrderAsync(OrderRequest request, string email);
         public Task<double> GetPriceAsync(IList<ProductsRequest?> products);

@@ -187,7 +187,7 @@ namespace Test.Repository
 
         public Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size)
         {
-            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id);
+            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id && s.size == size);
             var szUpdate = productSize.FirstOrDefault();
 
             if (szUpdate == null)
@@ -208,7 +208,7 @@ namespace Test.Repository
 
         public async Task<int> CheckQtyAsync(int quanlity, Guid id, string size)
         {
-            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id);
+            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id && s.size == size);
             var szUpdate = await productSize.FirstOrDefaultAsync();
             if(szUpdate == null)
             {
