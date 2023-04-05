@@ -14,6 +14,7 @@ using Shop.Api.Abtracst;
 using Shop.Api.Models;
 using Microsoft.CodeAnalysis;
 using Shop.Api.Repository;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Test.Repository
 {
@@ -21,26 +22,28 @@ namespace Test.Repository
     {
         private readonly NewDBContext _dbContext;
         private readonly IMapper _mapper;
-        public static IWebHostEnvironment _environment;
         private readonly IImageServices _imageServices;
-        public ProductRepository(IImageServices imageServices, NewDBContext dbContext, IMapper mapper, IWebHostEnvironment environment)
+        public ProductRepository(IImageServices imageServices, NewDBContext dbContext, IMapper mapper)
         {
             _dbContext = dbContext;
             _mapper = mapper;
-            _environment = environment;
             _imageServices = imageServices;
         }
 
         public async Task<ProductDTO> GetOneProductAsync(Guid id)
         {
 
-             var product = _dbContext.Products.Include(p => p.Sizes).FirstOrDefault(p => p.Id == id);
-             var size = product?.Sizes.Select(s => _mapper.Map<SizeDTO>(s)).ToList();
+            var product = _dbContext.Products.Include(p => p.Sizes).FirstOrDefault(p => p.Id == id);
+            var size = product?.Sizes.Select(s => _mapper.Map<SizeDTO>(s)).ToList();
+            if (product == null)
+            {
+                throw new Exception("product not found!!!");
+            }
             return new ProductDTO
             {
-                Id = product.Id ,
+                Id = product.Id,
                 Name = product.Name,
-                Description= product.Description,
+                Description = product.Description,
                 Price = product.Price,
                 Image = product.Image,
                 IM = await _imageServices.ParseAsync(product.Image),
@@ -79,31 +82,26 @@ namespace Test.Repository
 
             }
 
-            IEnumerable<ProductT> returns = products.Select(pro => _mapper.Map<ProductT>(pro));
-            var total = 0;
-            if (search.PageSize != 0)
-            {
-                total = returns.Count() / search.PageSize;
-                if (returns.Count() % search.PageSize != 0)
-                {
-                    total += 1;
-                }
-            }
-            returns = returns.ToPagedList(search.PageIndex, search.PageSize);
-            foreach (var item in returns)
-            {
-                var imagePath = Path.Combine(item.Image);
+            var totalItems = products.Count();
+            var totalPages = (int)Math.Ceiling((double)totalItems / search.PageSize);
 
-                if (System.IO.File.Exists(imagePath))
-                {
-                    item.IM = await System.IO.File.ReadAllBytesAsync(imagePath);
-                }
+            var pagedProducts = products.Skip(search.PageSize * (search.PageIndex - 1))
+                                         .Take(search.PageSize)
+                                         .Select(pro => _mapper.Map<ProductT>(pro))
+                                         .ToList();
+
+            var imagePaths = pagedProducts.Select(p => Path.Combine(p.Image ?? "")).ToList();
+            var imageDataList = await Task.WhenAll(imagePaths.Select(p => System.IO.File.ReadAllBytesAsync(p)));
+
+            for (int i = 0; i < pagedProducts.Count; i++)
+            {
+                pagedProducts[i].IM = imageDataList[i];
             }
+
             return new PageProduct
             {
-
-                Products = returns.ToList(),
-                totalPage = total
+                Products = pagedProducts,
+                TotalPages = totalPages
             };
         }
 
@@ -123,7 +121,7 @@ namespace Test.Repository
                 {
                     Id = Guid.NewGuid(),
                     Name = product.Name != null ? product.Name : "Unknow",
-                    Price = (double)product.Price,
+                    Price = (double)product.Price ,
                     Description = product.Description != null ? product.Description : "Unknow",
                     Image = imagePath,
                 };
@@ -138,11 +136,14 @@ namespace Test.Repository
 
         public async Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes)
         {
-            Product product = await _dbContext.Products.FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
+            Product? product = await _dbContext.Products.FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
             if (product == null)
             {
-                return "Product not found!!";
+                throw new Exception("No exs product");
             }
+            if(stringSizes.StringSize == null) {
+                return "Size cant be null!!";
+                    }
             foreach (var i in stringSizes.StringSize)
             {
                 var Size = new Size
@@ -156,7 +157,7 @@ namespace Test.Repository
                 {
                     await _dbContext.Sizes.AddAsync(Size);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return $"false to add for {product.Name}";
                 }
@@ -184,9 +185,36 @@ namespace Test.Repository
             return name ?? string.Empty;
         }
 
-        public  Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size)
+        public Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size)
         {
-            throw new NotImplementedException();
+            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id);
+            var szUpdate = productSize.FirstOrDefault();
+
+            if (szUpdate == null)
+            {
+                throw new Exception("Size not found.");
+            }
+
+            if (szUpdate.Qty < quanlity)
+            {
+                return Task.FromResult(false);
+            }
+
+            szUpdate.Qty -= quanlity;
+            _dbContext.Entry(szUpdate).State = EntityState.Modified;
+            _dbContext.SaveChanges();
+            return Task.FromResult(true);
+        }
+
+        public async Task<int> CheckQtyAsync(int quanlity, Guid id, string size)
+        {
+            var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id);
+            var szUpdate = await productSize.FirstOrDefaultAsync();
+            if(szUpdate == null)
+            {
+                return 0;
+            }
+            return  szUpdate.Qty - quanlity;
         }
     }
 }

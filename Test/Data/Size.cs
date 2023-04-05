@@ -12,6 +12,6 @@ namespace Test.Data
         [Required(ErrorMessage ="Don't know")]
         public string? size { get; set; }    
         public int Qty { get; set; }
-        public virtual Product Products { get; set; }
+        public virtual Product Products { get; set; } = new Product();
     }
 }

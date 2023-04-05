@@ -14,6 +14,10 @@ using System.Text.Json.Nodes;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Test.Data;
+using System.Text;
+using System.Security.Cryptography;
+using MassTransit;
+using MassTransit.Transports;
 
 namespace Shop.Api.Controllers
 {
@@ -23,33 +27,47 @@ namespace Shop.Api.Controllers
     {
         private readonly NewDBContext _dbContext;
         private readonly IConfiguration _configuration;
-        private readonly IOrderServices _orderServices;
-
-        public OrderController(NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
+        private readonly IOrderServices<string> _orderServices;
+        public readonly IPublishEndpoint _publishEndpoint;
+        private readonly IBus _bus;
+        public OrderController(IBus bus, IPublishEndpoint publishEndpoint, NewDBContext dBContext, IConfiguration configuration, IOrderServices<string> orderServices)
         {
             _dbContext = dBContext;
             _configuration = configuration;
             _orderServices = orderServices;
+            _publishEndpoint = publishEndpoint;
+            _bus = bus;
         }
         [HttpPost]
         [Route("Checkout")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest  request)
+        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request, [FromHeader(Name = "username")] string userName = null)
         {
             string emailUser = User.FindFirstValue(ClaimTypes.Name);
-             var result = await _orderServices.OrderAsync(request, emailUser);
+            var result = await _orderServices.OrderAsync(request, emailUser);
             if (result.Status)
             {
                 return Ok(result);
             }
-            return StatusCode(430,result.Message);
+            return StatusCode(430, result.Message);
         }
 
+        [HttpPost]
+        [Route("GetTotal")]
+        public async Task<IActionResult> GetTotalAsync(IList<ProductsRequest?> products)
+        {
+            if (products == null)
+            {
+                return BadRequest();
+            }
+            var result = await _orderServices.GetPriceAsync(products);
+            return Ok(result);
+        }
         [HttpPost("Post")]
         public async Task<IActionResult> SaveImage([FromForm] ProductAdd product)
         {
             BlobContainerClient blod = new BlobContainerClient(_configuration["AzureString"], "shoimage");
-            using(var stream = new MemoryStream())
+            using (var stream = new MemoryStream())
             {
                 await product.Image.CopyToAsync(stream);
                 stream.Position = 0;
@@ -75,6 +93,33 @@ namespace Shop.Api.Controllers
 
             return File(stream, response.Value.ContentType);
         }
-      
-    }
+        [HttpPost]
+        public async Task<string> EncryptAsync(string Name)
+        {
+            string decryptedUsername = await Task.Run(()=> DecryptString(Name, "1111111111111111"));
+            return decryptedUsername ?? " ";
+        }
+        //Decrypt user
+        public static string DecryptString(string cipherText, string key)
+        {
+            byte[] cipherBytes = Convert.FromBase64String(cipherText);
+            using (Aes aes = Aes.Create())
+            {
+                aes.Key = Encoding.UTF8.GetBytes(key);
+                aes.IV = new byte[16];
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    using (CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                    {
+                        cs.Write(cipherBytes, 0, cipherBytes.Length);
+                        cs.Close();
+                    }
+                    byte[] decryptedBytes = ms.ToArray();
+                    return Encoding.UTF8.GetString(decryptedBytes);
+                }
+            }
+        }
+     }
 }
+    
+

@@ -4,14 +4,10 @@ namespace Test.Data
 {
     public class UserApp : IdentityUser
     {
-        public string Name { get; set; }
-        public string Adress { get; set; }
+        public string? Name { get; set; }
+        public string? Adress { get; set; }
         public string? RefreshToken { get; set; }
         public DateTime RefreshTokenExpiryTime { get; set; }
-        public virtual ICollection<Bill> Bills { get; set; }
-        public UserApp()
-        {
-            Bills = new List<Bill>();
-        }
+        public virtual ICollection<Bill>? Bills { get; set; }
     }
 }

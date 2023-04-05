@@ -12,6 +12,7 @@ namespace Shop.Api.Repository
         {
             _configuration = configuration;
         }
+
         public Task<ImageLog> AddAsync()
         {
             throw new NotImplementedException();

@@ -115,7 +115,9 @@ namespace Test.Repository
         }
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
+#pragma warning disable CS8604 // Possible null reference argument.
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
+#pragma warning restore CS8604 // Possible null reference argument.
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:ValidIssuer"],
@@ -216,6 +218,7 @@ namespace Test.Repository
         }
         private ClaimsPrincipal? GetPrincipalFromExpiredToken(string? token)
         {
+#pragma warning disable CS8604 // Possible null reference argument.
             var tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateAudience = false,
@@ -224,6 +227,7 @@ namespace Test.Repository
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"])),
                 ValidateLifetime = false
             };
+#pragma warning restore CS8604 // Possible null reference argument.
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
