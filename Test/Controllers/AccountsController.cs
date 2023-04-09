@@ -42,7 +42,7 @@ namespace Test.Controllers
             {
                 return Ok("Suggest!!");
             }
-            if(result == "Exsit")
+            if(result == "Exsit!!!")
             {
                 return BadRequest("Account already exists");
             }

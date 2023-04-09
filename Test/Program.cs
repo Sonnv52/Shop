@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.CodeAnalysis.Host.Mef;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +16,23 @@ using StackExchange.Redis;
 using Shop.Api.Abtracst;
 using Shop.Api.Repository;
 using MassTransit;
+using Share.Message;
+using MassTransit.Transports.Fabric;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
+builder.Services.AddMassTransit(x =>
+{
+    x.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config =>
+    {
+        config.Host(new Uri(builder.Configuration["RabbitMQ:Rabbitserver"]), h =>
+        {
+            h.Username(builder.Configuration["RabbitMQ:User"]);
+            h.Password(builder.Configuration["RabbitMQ:Password"]);
+        });
+    }));
+});
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
@@ -51,6 +63,7 @@ builder.Services.AddSwaggerGen(option =>
         }
     });
 });
+
 builder.Services.AddMvc();
 builder.Services.AddDbContext<NewDBContext>(options =>
 options.UseSqlServer(
@@ -93,6 +106,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IAccount, Class1>();
+builder.Services.AddScoped<IPushlishService<ProductSend>,PushlishResponsitory>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
 builder.Services.AddScoped<IOrderServices, OrderResponsitory>();
 

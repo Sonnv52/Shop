@@ -28,15 +28,15 @@ namespace Test.Repository
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
         private readonly IAccount _account;
-        public UserRespository(UserManager<UserApp> userManager,SignInManager<UserApp> signInManager,
-            RoleManager<IdentityRole> roleManager,IMapper mapper,IAccount account, IConfiguration configuration)
+        public UserRespository(UserManager<UserApp> userManager, SignInManager<UserApp> signInManager,
+            RoleManager<IdentityRole> roleManager, IMapper mapper, IAccount account, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _roleManager = roleManager;
             _mapper = mapper;
-            _account= account;
+            _account = account;
 
         }
         public async Task<string> SignUpAsync(SignUpUser model)
@@ -50,13 +50,14 @@ namespace Test.Repository
                 Email = model.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Email,
-                Name= model.Name,
-                Adress = model.Adress
+                Name = model.Name,
+                Adress = model.Adress,
+                PhoneNumber= model.PhoneNumber
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
                 return "false";
-      
+
             if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
             if (!await _roleManager.RoleExistsAsync(UserRoles.User))
@@ -70,7 +71,7 @@ namespace Test.Repository
                 await _userManager.AddToRoleAsync(user, UserRoles.User);
             }
             return "true";
-    }
+        }
 
         public async Task<AuthenRespone> SignInAsync(SignInUser model)
         {
@@ -88,7 +89,7 @@ namespace Test.Repository
                     authClaims.Add(new Claim(ClaimTypes.Role, userRole));
                 }
                 var token = GetToken(authClaims);
-                var Refreshtoken = await Task.Run(()=> GenerateRefreshToken());
+                var Refreshtoken = await Task.Run(() => GenerateRefreshToken());
                 user.RefreshToken = Refreshtoken;
                 _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
                 user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
@@ -97,8 +98,8 @@ namespace Test.Repository
                 {
                     User = model.Email,
                     Token = new JwtSecurityTokenHandler().WriteToken(token),
-                    RefreshToken= Refreshtoken
-            };
+                    RefreshToken = Refreshtoken
+                };
                 return ResponeToken;
             }
             return new AuthenRespone
@@ -158,7 +159,7 @@ namespace Test.Repository
         public async Task<string> SetProfileUser(SignUpUser user, string mail)
         {
             var usercurent = await _userManager.FindByEmailAsync(mail);
-            if(user.Adress != null)
+            if (user.Adress != null)
             {
                 usercurent.Adress = user.Adress;
             }
@@ -171,7 +172,7 @@ namespace Test.Repository
                 usercurent.Name = user.Name;
             }
             var result = await _userManager.UpdateAsync(usercurent);
-            if(!result.Succeeded) return "false";
+            if (!result.Succeeded) return "false";
             return "success";
         }
 

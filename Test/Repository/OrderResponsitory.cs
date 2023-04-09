@@ -1,12 +1,17 @@
-﻿using MassTransit;
+﻿using AutoMapper;
+using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.DotNet.Scaffolding.Shared.Messaging;
 using Microsoft.EntityFrameworkCore;
+using Share.Message;
 using Shop.Api.Abtracst;
+using Shop.Api.Models;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Order;
+using System.Collections.Generic;
 using Test.Data;
 using Test.Enums;
+using Test.Models;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Shop.Api.Repository
@@ -16,11 +21,49 @@ namespace Shop.Api.Repository
         private readonly NewDBContext _dbContext;
         private readonly IUserServices _userServices;
         private readonly IProductServices _productServices;
-        public OrderResponsitory(NewDBContext dbContext, IUserServices userServices, IProductServices productServices)
+        private readonly IPushlishService<ProductSend> _pushlishService;
+        private readonly IMapper _mapper;
+        private readonly IImageServices _imageServices;
+        public OrderResponsitory(IImageServices imageServices, IMapper mapper, NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPushlishService<ProductSend> pushlishService)
         {
+            _imageServices = imageServices;
             _dbContext = dbContext;
             _userServices = userServices;
             _productServices = productServices;
+            _pushlishService = pushlishService;
+            _mapper = mapper;
+        }
+
+        public async Task<IList<BillDTO>> GetBillsAsync(string email)
+        {
+            UserApp customer = await _userServices.GetUserByEmailAsync(email);
+            var customerId = customer.Id;
+
+            var result = _dbContext.Bills
+                .Where(b => b.UserApp.Id == customerId)
+                .Include(b => b.BillDetails)
+                    .ThenInclude(bd => bd.Product)
+                .ToList();
+
+            IList<BillDTO> results = new List<BillDTO>();
+            foreach (var bill in result)
+            {
+                foreach (var billDetail in bill.BillDetails)
+                {
+                    var dto = new BillDTO
+                    {
+                        Name = billDetail.Product.Name,
+                        Image = billDetail.Product.Image,
+                        OderDate = bill.OderDate,
+                        Price = billDetail.Price,
+                        Size = billDetail.Size,
+                        Total = billDetail.Totals,
+                        IM = await _imageServices.ParseAsync(billDetail.Product.Image)
+                    };
+                    results.Add(dto);
+                }
+            }
+            return results;
         }
 
         public async Task<double> GetPriceAsync(IList<ProductsRequest?> products)
@@ -40,7 +83,6 @@ namespace Shop.Api.Repository
         public async Task<OrderLog> OrderAsync(OrderRequest request, string email)
         {
             //List Product fail to order
-            var logFail = new OrderLog();
             UserApp? custommer = await _userServices.GetUserByEmailAsync(email);
             Bill bill = new Bill
             {
@@ -53,7 +95,7 @@ namespace Shop.Api.Repository
             };
             //Check product qty in DB
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            foreach (var Order in request.Products)
+            foreach ( var Order in request.Products)
             {
                 if (Order == null)
                 {
@@ -69,10 +111,11 @@ namespace Shop.Api.Repository
                 Product? pr = product?.FirstOrDefault();
                 if (pr == null)
                 {
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                    logFail?.Message?.Add($"Fail to order item{await _productServices.GetProductName(Order.id)}");
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                    return logFail ?? new OrderLog();
+                    return new OrderLog
+                    {
+                        Message = new List<string> { $"Fail to order item {await _productServices.GetProductName(Order.id)} với size là {Order.Size}" },
+                        Status = false
+                    };
                 }
                 else
                 {
@@ -82,25 +125,26 @@ namespace Shop.Api.Repository
                         Product = pr,
                         Size = Order.Size ?? "No",
                         Totals = Order.Qty,
-                        Bill = bill
+                        Bill = bill,
+                        Price = pr.Price * Order.Qty
                     };
-                        var ok = await _productServices.CheckQtyAsync(Order.Qty, pr.Id, Order.Size ?? "NO");
-                        if (ok < 0)
+                    var ok = await _productServices.CheckQtyAsync(Order.Qty, pr.Id, Order.Size ?? "NO");
+                    if (ok < 0)
+                    {
+                        return new OrderLog
                         {
-                            return new OrderLog
-                            {
-                                Message = new List<string> { $"Fail to order item {await _productServices.GetProductName(Order.id)} với size là {Order.Size} chỉ còn {ok + Order.Qty}" },
-                                Status = false
-                            };
-                        }
-                        await _dbContext.BillDetails.AddAsync(billDetail);
+                            Message = new List<string> { $"Fail to order item {await _productServices.GetProductName(Order.id)} với size là {Order.Size} chỉ còn {ok + Order.Qty}" },
+                            Status = false
+                        };
+                    }
+                    await _dbContext.BillDetails.AddAsync(billDetail);
                 }
             }
             foreach (var Order in request.Products)
             {
                 await _productServices.UpdateQuantySizeAsync(Order.Qty, Order.id, Order.Size ?? "NO");
             }
-                try
+            try
             {
                 await _dbContext.SaveChangesAsync();
             }
@@ -108,6 +152,14 @@ namespace Shop.Api.Repository
             {
                 throw new Exception(ex.ToString());
             }
+
+            await _pushlishService.PushlishAsync(new ProductSend
+            {
+                Email = bill.UserApp.Email,
+                GuidId = Guid.NewGuid(),
+                Name = bill.UserApp.Name
+            });
+
             return new OrderLog { Status = true };
         }
 

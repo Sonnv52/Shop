@@ -11,7 +11,7 @@ namespace Test.Data
         public Guid Id { get; set; }
         public DateTime OderDate { get; set; }
         public string Adress { get; set; }
-        public string Phone { get; set; }
+        public string Phone { get; set; } = string.Empty;
 
         public virtual ICollection<BillDetail> BillDetails { get; set; }
         public UserApp UserApp { get; set; }

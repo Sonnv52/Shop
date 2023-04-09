@@ -13,6 +13,6 @@ namespace Test.Data
         public string? Size { get; set; }
         public Bill? Bill { get; set; }
         public Product? Product { get; set; }
-
+        public double? Price { get; set; }
     }
 }

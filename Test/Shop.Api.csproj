@@ -12,9 +12,9 @@
     <PackageReference Include="Azure.Storage.Blobs" Version="12.15.1" />
     <PackageReference Include="cryptojs.TypeScript.DefinitelyTyped" Version="0.7.3" />
     <PackageReference Include="Dapper" Version="2.0.123" />
-    <PackageReference Include="MassTransit" Version="8.0.14" />
+    <PackageReference Include="MassTransit" Version="8.0.2" />
     <PackageReference Include="MassTransit.AspNetCore" Version="7.3.1" />
-    <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.14" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="8.0.2" />
     <PackageReference Include="MediatR" Version="12.0.1" />
     <PackageReference Include="Microsoft.AspNet.WebApi.Core" Version="5.2.9" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.0" />
@@ -38,13 +38,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ForgotPasswordService\ForgotPasswordService.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Commad\" />
     <Folder Include="Migrations\" />
     <Folder Include="wwroot\image\products\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ForgotPasswordService\ForgotPasswordService.csproj" />
+    <ProjectReference Include="..\Share.Message\Share.Message.csproj" />
   </ItemGroup>
 
 </Project>

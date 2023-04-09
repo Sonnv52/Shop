@@ -18,6 +18,8 @@ using System.Text;
 using System.Security.Cryptography;
 using MassTransit;
 using MassTransit.Transports;
+using Test.Models;
+using Share.Message;
 
 namespace Shop.Api.Controllers
 {
@@ -28,12 +30,15 @@ namespace Shop.Api.Controllers
         private readonly NewDBContext _dbContext;
         private readonly IConfiguration _configuration;
         private readonly IOrderServices _orderServices;
-        public OrderController( NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
+        private readonly IBus _bus;
+        public OrderController(IBus bus, NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
         {
             _dbContext = dBContext;
             _configuration = configuration;
             _orderServices = orderServices;
+            _bus= bus;
         }
+
         [HttpPost]
         [Route("Checkout")]
         [Authorize(AuthenticationSchemes = "Bearer")]
@@ -72,6 +77,7 @@ namespace Shop.Api.Controllers
             }
             return Ok();
         }
+
         [HttpGet("{fileName}")]
         public async Task<IActionResult> GetImage(string fileName)
         {
@@ -90,6 +96,7 @@ namespace Shop.Api.Controllers
 
             return File(stream, response.Value.ContentType);
         }
+
         [HttpPost]
         public async Task<string> EncryptAsync(string Name)
         {
@@ -116,7 +123,17 @@ namespace Shop.Api.Controllers
                 }
             }
         }
-     }
+
+        [HttpGet]
+        [Route("/OrderList")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> GetBillAsync()
+        {
+            string email = User.FindFirstValue(ClaimTypes.Name);
+            var result = await _orderServices.GetBillsAsync(email);
+            return Ok(result);
+        }
+    }
 }
     
 
