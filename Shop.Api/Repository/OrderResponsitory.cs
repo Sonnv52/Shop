@@ -34,7 +34,7 @@ namespace Shop.Api.Repository
             _mapper = mapper;
         }
 
-        public async Task<IList<BillDTO>> GetBillsAsync(string email)
+        public async Task<IList<BillDTO?>> GetBillsAsync(string email)
         {
             UserApp customer = await _userServices.GetUserByEmailAsync(email);
             var customerId = customer.Id;
@@ -45,11 +45,12 @@ namespace Shop.Api.Repository
                     .ThenInclude(bd => bd.Product)
                 .ToList();
 
-            IList<BillDTO> results = new List<BillDTO>();
+            IList<BillDTO?> results = new List<BillDTO?>();
             foreach (var bill in result)
             {
                 foreach (var billDetail in bill.BillDetails)
                 {
+                    if (billDetail.Product == null) continue;
                     var dto = new BillDTO
                     {
                         Name = billDetail.Product.Name,
@@ -58,6 +59,7 @@ namespace Shop.Api.Repository
                         Price = billDetail.Price,
                         Size = billDetail.Size,
                         Total = billDetail.Totals,
+                        Status = bill.Status,
                         IM = await _imageServices.ParseAsync(billDetail.Product.Image)
                     };
                     results.Add(dto);

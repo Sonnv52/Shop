@@ -53,7 +53,7 @@ namespace Shop.Api.Repository
 
         public async Task<PageProduct> GetProductAsync(SearchModel search)
         {
-            var products = _dbContext.Products.AsQueryable();
+            var products = _dbContext.Products.Where(p => p.IsDeleted == false).AsQueryable();
             #region sort
             if (!String.IsNullOrEmpty(search.sort))
             {

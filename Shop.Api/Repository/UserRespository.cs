@@ -54,7 +54,7 @@ namespace Shop.Api.Repository
                 Adress = model.Adress,
                 PhoneNumber= model.PhoneNumber
             };
-            var result = await _userManager.CreateAsync(user, model.Password);
+            var result = await _userManager.CreateAsync(user, model.Password.Trim());
             if (!result.Succeeded)
                 return "false";
 

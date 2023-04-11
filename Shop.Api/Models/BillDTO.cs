@@ -8,6 +8,7 @@
         public string? Name { get; set; }
         public string? Image { get; set; }
         public int? Total { get; set; }
+        public string? Status { get; set; }
         public byte[]? IM { get; set; }
     }
 }

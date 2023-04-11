@@ -11,8 +11,4 @@
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="7.0.3" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Test\Shop.Api.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -20,6 +20,7 @@ namespace Shop.Api.Data
         public virtual ICollection<BillDetail> BillDetails { get;set; }
         public virtual ICollection<ImageProducts> ImageProducts { get; set; }
         public string? CreateAt { get; set; }  
+        public bool? IsDeleted { get; set; } = false;
         public virtual ICollection<Size> Sizes { get; set; }
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
         public Product() {
