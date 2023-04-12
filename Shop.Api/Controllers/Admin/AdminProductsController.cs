@@ -87,7 +87,7 @@ namespace Shop.Api.Controllers.Admin
         public async Task<IActionResult> AddSizeAsync([FromBody] AddSize<StringSize> stringSizes)
         {
             var result = await _productServices.AddSizeProductAsync(stringSizes);
-            if(result != "Suggest!!")
+            if(!result.Equals("Suggest!!"))
             {
                 return StatusCode(450,result);
             }

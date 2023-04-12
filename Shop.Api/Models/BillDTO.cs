@@ -2,6 +2,7 @@
 {
     public class BillDTO
     {
+        public Guid id { get; set; }
         public DateTime OderDate { get; set; }
         public double? Price { get; set; } = 0;
         public string? Size { get; set; }

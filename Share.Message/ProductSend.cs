@@ -1,10 +1,11 @@
 ﻿namespace Share.Message
 {
-    public class ProductSend
+    public class ProductSend : Massage
     {
         public Guid GuidId { get; set; }
         public string? Email { get; set; }
         public string? Name { get; set; }
+        public string? idMessage { get; set; }
         public IList<Products>? products { get; set;}
         public double Total { get; set; } = 0;
 

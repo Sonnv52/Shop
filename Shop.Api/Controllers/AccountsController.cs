@@ -38,11 +38,11 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> SignUpAsync([FromBody] SignUpUser user)
         {
             var result = await _userRepository.SignUpAsync(user);
-            if (result == "true")
+            if (result.Equals("true"))
             {
                 return Ok("Suggest!!");
             }
-            if(result == "Exsit!!!")
+            if(result.Equals("Exsit!!!"))
             {
                 return BadRequest("Account already exists");
             }
@@ -53,11 +53,11 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> SignUpUserAsync(SignUpUser user)
         {
             string result = await _userRepository.SignUpUserAsync(user);
-            if (result == "success")
+            if (result.Equals("success"))
             {
                 return Ok("success!!");
             }
-            if(result == "Exsit")
+            if(result.Equals("Exsit"))
             {
                 return BadRequest("Account already exists");
             }    
@@ -68,10 +68,11 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> SignInAsync(SignInUser user)
         {
             var result = await _userRepository.SignInAsync(user);
-#pragma warning disable CS0219 // Variable is assigned but its value is never used
-            var refreshtoken = "";
-#pragma warning restore CS0219 // Variable is assigned but its value is never used
-            if (result.Token == "false")
+            if(result == null || String.IsNullOrEmpty(result.Token))
+            {
+                return StatusCode(403, "Can't authen this account");
+            }
+            if (result.Token.Equals("false"))
             {
                 return StatusCode(500, "Password or Email incorect"); ;
             }
@@ -110,11 +111,11 @@ namespace Shop.Api.Controllers
         {
            string userName = User.FindFirstValue(ClaimTypes.Name);
            string result = await _userRepository.SetProfileUser(user, userName);
-            if(result == null)
+            if(String.IsNullOrEmpty(result))
             {
                 return StatusCode(500, "False to save!!");
             }
-            if(result == "false")
+            if(result.Equals("false"))
             {
                 return StatusCode(500, "False to save!!");
             }
@@ -129,7 +130,7 @@ namespace Shop.Api.Controllers
                 return BadRequest();
             }
             var result = await _userRepository.RefreshTokenAysnc(authRefresh);
-            if(result.RefreshToken == null) {
+            if(String.IsNullOrEmpty(result.RefreshToken)) {
                 return StatusCode(500, result.Token);
             }
             return Ok(result);

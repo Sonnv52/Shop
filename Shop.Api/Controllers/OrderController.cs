@@ -13,12 +13,10 @@ using System.Net.WebSockets;
 using System.Text.Json.Nodes;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using Shop.Api.Data;
 using System.Text;
 using System.Security.Cryptography;
 using MassTransit;
 using MassTransit.Transports;
-using Shop.Api.Models;
 using Share.Message;
 
 namespace Shop.Api.Controllers
@@ -42,10 +40,10 @@ namespace Shop.Api.Controllers
         [HttpPost]
         [Route("Checkout")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request)
+        public async Task<IActionResult> OrderAsync([FromBody] OrderRequest request, CancellationToken token)
         {
             string emailUser = User.FindFirstValue(ClaimTypes.Name);
-            var result = await _orderServices.OrderAsync(request, emailUser);
+            var result = await _orderServices.OrderAsync(request, emailUser, token);
             if (result.Status)
             {
                 return Ok(result);

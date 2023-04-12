@@ -6,10 +6,8 @@ namespace Shop.Api.Enums
 {
     public enum OrderStatus
     {
-        InProgress,
-        Confirmed,
         Shipping,
-        Success,
-        Canceled
+        Canceled,
+        Success
     }
 }

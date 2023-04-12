@@ -14,7 +14,6 @@ using Shop.Api.Models;
 using Shop.Api.Models.CreateModel;
 using StackExchange.Redis;
 using Shop.Api.Data;
-using Shop.Api.Models;
 using Shop.Api.Repository;
 
 namespace Shop.Api.Controllers
