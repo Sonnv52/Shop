@@ -11,6 +11,8 @@ using Shop.Api.Data;
 using Shop.Api.Models;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Repository;
+using Shop.Api.Models.Page;
+using Shop.Api.Models.Order;
 
 namespace Shop.Api.Controllers
 {
@@ -135,12 +137,36 @@ namespace Shop.Api.Controllers
             }
             return Ok(result);
         }
+
         [Authorize(AuthenticationSchemes = "Bearer")]
         [HttpPost("Revoke")]
         public async Task<IActionResult> ReVokeAsync()
         {
             var userName = User.FindFirstValue(ClaimTypes.Name);
             var result = await _userRepository.ReVokeAsync(userName);
+            return Ok(result);
+        }
+
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+        [HttpGet]
+        [Route("/ListUser")]
+        public async Task<IActionResult> GetAllUserAsync([FromQuery]PageQuery page)
+        {
+            var result = await _userRepository.GetAllUserAsync(page.pageIndex, page.pageSize);
+            var pageReturn = new AllUserDTO
+            {
+                users = result,
+                totals = result.TotalPages
+            };
+            return Ok(pageReturn);
+        }
+
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+        [HttpPatch]
+        [Route("/ChangeAccount")]
+        public async Task<IActionResult> ChangeStatusAccountAsync(string email, bool status)
+        {
+            var result = await _userRepository.ChangeStatusAsync(email,status);
             return Ok(result);
         }
     }

@@ -119,7 +119,7 @@ namespace Shop.Api.Repository
                 {
                     Id = Guid.NewGuid(),
                     Name = product.Name != null ? product.Name : "Unknow",
-                    Price = (double)product.Price ,
+                    Price = (double)product.Price,
                     Description = product.Description != null ? product.Description : "Unknow",
                     Image = imagePath,
                 };
@@ -139,9 +139,10 @@ namespace Shop.Api.Repository
             {
                 throw new Exception("No exs product");
             }
-            if(stringSizes.StringSize == null) {
+            if (stringSizes.StringSize == null)
+            {
                 return "Size cant be null!!";
-                    }
+            }
             foreach (var i in stringSizes.StringSize)
             {
                 var Size = new Size
@@ -208,11 +209,44 @@ namespace Shop.Api.Repository
         {
             var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id && s.size == size);
             var szUpdate = await productSize.FirstOrDefaultAsync();
-            if(szUpdate == null)
+            if (szUpdate == null)
             {
                 return 0;
             }
-            return  szUpdate.Qty - quanlity;
+            return szUpdate.Qty - quanlity;
+        }
+
+        public async Task<bool> SetProductAsync(ProductAdd product)
+        {
+            Product? productModifi = _dbContext.Products.FirstOrDefault(p => p.Id == product.id);
+            if (productModifi == null)
+            {
+                return false;
+            }
+            string? imagePath = null;
+            if (product.Image != null)
+            {
+                if (!string.IsNullOrEmpty(productModifi.Image))
+                {
+                    var oldImagePath = Path.Combine(productModifi.Image);
+                    if (File.Exists(oldImagePath))
+                    {
+                        File.Delete(oldImagePath);
+                    }
+                }
+                var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
+                imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
+                using (var stream = new FileStream(imagePath, FileMode.Create))
+                {
+                    await product.Image.CopyToAsync(stream);
+                }
+            }
+            productModifi.Price = product.Price ?? productModifi.Price;
+            productModifi.Name = product.Name ?? productModifi.Name;
+            productModifi.Image = imagePath ?? productModifi.Image;
+            productModifi.Description = product.Description ?? productModifi.Description;
+            _dbContext.Entry(productModifi).State = EntityState.Modified;
+            try { await _dbContext.SaveChangesAsync(); return true; } catch { return false; }
         }
     }
 }

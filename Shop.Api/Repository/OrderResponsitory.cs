@@ -15,6 +15,7 @@ using StackExchange.Redis;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
+using Shop.Api.Models.Page;
 
 namespace Shop.Api.Repository
 {
@@ -40,9 +41,47 @@ namespace Shop.Api.Repository
             _logger = logger;
         }
 
-        public Task<IList<BillAdminDTO>> GetAllBillAsync()
+        public async Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize)
         {
-            throw new NotImplementedException();
+            var bills = _dbContext.Bills.Include(b => b.UserApp);
+            var billPage = bills.Select(b => new BillAdminDTO
+            {
+                Id = b.Id,
+                Adress = b.Adress,
+                OderDate = b.OderDate,
+                Phone = b.Phone,
+                Status = b.Status,
+                email = b.UserApp.Email,
+                Name= b.UserApp.Name
+            });
+            var k = billPage.ToPagedList(page, pageSize);
+            return k;
+        }
+
+        public async Task<BillDetailDTO> GetBillDetailAsync(Guid id)
+        {
+            var bill = await _dbContext.Bills.Where(b => b.Id == id).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
+            if (bill == null)
+                return new BillDetailDTO
+                {
+
+                };
+            var result = new BillDetailDTO
+            {
+                GuidId = bill.Id,
+                OrderDate = bill.OderDate,
+                OrderStatus = bill.Status,
+                Email = bill.UserApp.Email,
+                Detail = bill.BillDetails?.Select(b => new DetailBill
+                {
+                    Price = b.Price,
+                    ProductId = b.Product.Id,
+                    ProductName = b.Product.Name,
+                    Qty = b.Totals,
+                    IM = _imageServices.Parse(b.Product.Image)
+                }).ToList()
+            };
+            return result;
         }
 
         public async Task<IList<BillDTO?>> GetBillsAsync(string email)
@@ -174,7 +213,7 @@ namespace Shop.Api.Repository
             {
                 throw new Exception(ex.ToString());
             }
-            IList<string> keyPushlish = new List<string>();
+           /* IList<string> keyPushlish = new List<string>();
             foreach (var i in Image)
             {
                 var imKey = new StringBuilder($"image:{Guid.NewGuid()}");
@@ -191,40 +230,7 @@ namespace Shop.Api.Repository
                 {
                     _logger.LogCritical(ex.ToString());
                 }
-            }
-            /*try
-           {
-               var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
-               // Check if the search query is already cached in Redis
-               var cachedResult = await _cache.GetStringAsync(cacheKey);
-               if (cachedResult != null)
-               {
-                   // If the result is cached, return it from the cache
-                   return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
-               }
-               // If the result is not cached, execute the search query
-               var result = await _productservices.GetProductAsync(search!);
-
-               // Serialize the result and cache it in Redis for 1 hour
-               var serializedResult = JsonConvert.SerializeObject(result);
-
-               await _cache.SetStringAsync(cacheKey, serializedResult, new DistributedCacheEntryOptions
-               {
-                   AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1),
-
-               });
-               return Ok(result);
-           }
-           catch (Exception ex)
-           {
-               Console.WriteLine(ex);
-           }*/
-            /* await _pushlishService.PushlishAsync(new ProductSend
-             {
-                 Email = bill.UserApp.Email,
-                 GuidId = Guid.NewGuid(),
-                 Name = bill.UserApp.Name
-             });*/
+            }*/
 
             return new OrderLog { Status = true };
         }

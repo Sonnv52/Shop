@@ -30,6 +30,17 @@ namespace Shop.Api.Repository
             return null;
         }
 
+        public byte[]? Parse(string url)
+        {
+            var imagePath = Path.Combine(url);
+
+            if (System.IO.File.Exists(imagePath))
+            {
+                return  System.IO.File.ReadAllBytes(imagePath);
+            }
+
+            return null;
+        } 
         public async Task<string> PostImageToAzureAsync(IFormFile file)
         {
 

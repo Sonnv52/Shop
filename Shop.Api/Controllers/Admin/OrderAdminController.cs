@@ -7,6 +7,7 @@ using Shop.Api.Data;
 using System.Drawing.Printing;
 using Shop.Api.Models.Page;
 using X.PagedList;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 
 namespace Shop.Api.Controllers.Admin
 {
@@ -20,6 +21,14 @@ namespace Shop.Api.Controllers.Admin
             _orderServices = orderServices;
             _dbContext = dbContext;
         }
+        [HttpGet]
+        [Route("/BillDetail")]
+        public async Task<ActionResult<BillDetailDTO>> GetBillDetailAsync([FromQuery] Guid id)
+        {
+            var result = await _orderServices.GetBillDetailAsync(id);
+            return Ok(result);
+        }
+
         [HttpPatch]
         [Route("/SetBill/Status")]
         // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
@@ -28,20 +37,15 @@ namespace Shop.Api.Controllers.Admin
             var result = await _orderServices.SetBillAsync(setBills);
             return Ok(result);
         }
-        [HttpGet]
+       [HttpGet]
         [Route("/GetAllBill")]
         // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllBillAsync(int page, int pageSize)
+        public async Task<IActionResult> GetAllBillAsync([FromQuery] PageQuery page)
         {
-            var bill = _dbContext.Bills.ToList();
-            var retu = bill.Select(b => new BillAdminDTO
-            {
-                Adress= b.Adress,
-                Id= b.Id,
-                OderDate = b.OderDate
-            }).ToList().GetPage(page, pageSize);
-            return Ok(retu);
+            var bill =await _orderServices.GetAllBillAsync(page.pageIndex, page.pageSize);
+            return Ok(bill);
+            
         }
-
+       
     }
 }

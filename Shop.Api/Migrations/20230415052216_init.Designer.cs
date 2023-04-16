@@ -12,7 +12,7 @@ using Shop.Api.Data;
 namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    [Migration("20230401211123_init")]
+    [Migration("20230415052216_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -158,6 +158,67 @@ namespace Shop.Api.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Shop.Api.Data.Bill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Adress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("OderDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserAppId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserAppId");
+
+                    b.ToTable("Bill");
+                });
+
+            modelBuilder.Entity("Shop.Api.Data.BillDetail", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BillId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<double?>("Price")
+                        .HasColumnType("float");
+
+                    b.Property<Guid?>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Size")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Totals")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("BillDetail");
+                });
+
             modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
                 {
                     b.Property<Guid>("Id")
@@ -192,60 +253,6 @@ namespace Shop.Api.Migrations
                     b.ToTable("ImageProducts");
                 });
 
-            modelBuilder.Entity("Shop.Api.Data.Bill", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Adress")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("OderDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UserAppId")
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserAppId");
-
-                    b.ToTable("Bill");
-                });
-
-            modelBuilder.Entity("Shop.Api.Data.BillDetail", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("BillId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Size")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Totals")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BillId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("BillDetail");
-                });
-
             modelBuilder.Entity("Shop.Api.Data.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -262,6 +269,9 @@ namespace Shop.Api.Migrations
                     b.Property<string>("Image")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool?>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -311,7 +321,6 @@ namespace Shop.Api.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Adress")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -332,7 +341,6 @@ namespace Shop.Api.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("NormalizedEmail")
@@ -432,15 +440,6 @@ namespace Shop.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
-                {
-                    b.HasOne("Shop.Api.Data.Product", "Product")
-                        .WithMany("ImageProducts")
-                        .HasForeignKey("ProductId");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("Shop.Api.Data.Bill", b =>
                 {
                     b.HasOne("Shop.Api.Data.UserApp", "UserApp")
@@ -461,6 +460,15 @@ namespace Shop.Api.Migrations
                         .HasForeignKey("ProductId");
 
                     b.Navigation("Bill");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Shop.Api.Data.ImageProducts", b =>
+                {
+                    b.HasOne("Shop.Api.Data.Product", "Product")
+                        .WithMany("ImageProducts")
+                        .HasForeignKey("ProductId");
 
                     b.Navigation("Product");
                 });

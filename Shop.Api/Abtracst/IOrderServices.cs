@@ -1,6 +1,8 @@
-﻿using Shop.Api.Models;
+﻿using Shop.Api.Data;
+using Shop.Api.Models;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Order;
+using Shop.Api.Models.Page;
 
 namespace Shop.Api.Abtracst
 {
@@ -10,6 +12,7 @@ namespace Shop.Api.Abtracst
         public Task<double> GetPriceAsync(IList<ProductsRequest?> products);
         public Task<IList<BillDTO?>> GetBillsAsync(string email);
         Task<bool> SetBillAsync(IList<SetBillRequest> setBills);
-        Task<IList<BillAdminDTO>> GetAllBillAsync();
-    }
+        Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize);
+        Task<BillDetailDTO> GetBillDetailAsync(Guid id);
+      }
 }

@@ -8,5 +8,6 @@ namespace Shop.Api.Abtracst
         public Task<ImageLog> RemoveAsync();
         public Task<byte[]?> ParseAsync(string url);
         public Task<string> PostImageToAzureAsync(IFormFile file);
+        public byte[]? Parse(string url);
     }
 }

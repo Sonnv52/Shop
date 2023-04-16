@@ -17,6 +17,7 @@ using Shop.Api.Abtracst;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Models.ListLog;
+using Shop.Api.Models.Page;
 
 namespace Shop.Api.Repository
 {
@@ -37,7 +38,39 @@ namespace Shop.Api.Repository
             _roleManager = roleManager;
             _mapper = mapper;
             _account = account;
+        }
+        public async Task<string> SignUpADAsync(SignUpUser model)
+        {
+            var userExists = await _userManager.FindByNameAsync(model.Email);
+            if (userExists != null)
+                return "Exsit!!!";
 
+            UserApp user = new()
+            {
+                Email = model.Email,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                UserName = model.Email,
+                Name = model.Name,
+                Adress = model.Adress,
+                PhoneNumber = model.PhoneNumber
+            };
+            var result = await _userManager.CreateAsync(user, model.Password.Trim());
+            if (!result.Succeeded)
+                return "false";
+
+            if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
+                await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
+            if (!await _roleManager.RoleExistsAsync(UserRoles.AdminAll))
+                await _roleManager.CreateAsync(new IdentityRole(UserRoles.AdminAll));
+            if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
+            {
+                await _userManager.AddToRoleAsync(user, UserRoles.Admin);
+            }
+            if (await _roleManager.RoleExistsAsync(UserRoles.AdminAll))
+            {
+                await _userManager.AddToRoleAsync(user, UserRoles.AdminAll);
+            }
+            return "true";
         }
         public async Task<string> SignUpAsync(SignUpUser model)
         {
@@ -60,22 +93,20 @@ namespace Shop.Api.Repository
 
             if (!await _roleManager.RoleExistsAsync(UserRoles.Admin))
                 await _roleManager.CreateAsync(new IdentityRole(UserRoles.Admin));
-            if (!await _roleManager.RoleExistsAsync(UserRoles.User))
-                await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
             if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
             {
                 await _userManager.AddToRoleAsync(user, UserRoles.Admin);
-            }
-            if (await _roleManager.RoleExistsAsync(UserRoles.Admin))
-            {
-                await _userManager.AddToRoleAsync(user, UserRoles.User);
             }
             return "true";
         }
 
         public async Task<AuthenRespone> SignInAsync(SignInUser model)
         {
-            var user = await _userManager.FindByNameAsync(model.Email);
+            UserApp user = await _userManager.FindByNameAsync(model.Email);
+            if (!user.LockoutEnabled)
+            {
+                return new AuthenRespone { Token = "Tài khoản đã bị vô hiệu hóa!!" };
+            }
             if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
@@ -146,6 +177,12 @@ namespace Shop.Api.Repository
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
                 return "false";
+            if (!await _roleManager.RoleExistsAsync(UserRoles.User))
+                await _roleManager.CreateAsync(new IdentityRole(UserRoles.User));
+            if (await _roleManager.RoleExistsAsync(UserRoles.User))
+            {
+                await _userManager.AddToRoleAsync(user, UserRoles.User);
+            }
             return "success";
         }
 
@@ -260,6 +297,24 @@ namespace Shop.Api.Repository
         {
             var user = await _userManager.FindByNameAsync(email);
             return user;
+        }
+
+        public async Task<PagedList<UserApp>> GetAllUserAsync(int page , int pageSize)
+        {
+            var usersInRole = await _userManager.GetUsersInRoleAsync("user");
+            return usersInRole.GetPage(page, pageSize);
+        }
+
+        public async Task<bool> ChangeStatusAsync(string email, bool status)
+        {
+            var user = await _userManager.FindByNameAsync(email);
+            if (user == null) return false;
+            user.LockoutEnabled = status;
+            try
+            {
+                await _userManager.UpdateAsync(user);
+                return true;
+            } catch (Exception ex) { return false; }
         }
     }
 }

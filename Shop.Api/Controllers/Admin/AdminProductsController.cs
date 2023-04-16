@@ -31,32 +31,11 @@ namespace Shop.Api.Controllers.Admin
         // PUT: api/AdminProducts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(Guid id, Product product)
+        public async Task<IActionResult> PutProduct( [FromForm] ProductAdd product)
         {
-            if (id != product.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(product).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
+            var result = await _productServices.SetProductAsync(product);
+            if(result) return Ok();
+            return StatusCode(450, false);
         }
 
         [HttpPost("UpLoad/Imgage")]
