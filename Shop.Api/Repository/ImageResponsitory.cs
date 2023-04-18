@@ -27,7 +27,7 @@ namespace Shop.Api.Repository
                 return await System.IO.File.ReadAllBytesAsync(imagePath);
             }
 
-            return null;
+            return new byte[0];
         }
 
         public byte[]? Parse(string url)
@@ -39,7 +39,7 @@ namespace Shop.Api.Repository
                 return  System.IO.File.ReadAllBytes(imagePath);
             }
 
-            return null;
+            return new byte[0];
         } 
         public async Task<string> PostImageToAzureAsync(IFormFile file)
         {

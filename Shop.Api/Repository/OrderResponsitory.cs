@@ -66,6 +66,7 @@ namespace Shop.Api.Repository
                 {
 
                 };
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
             var result = new BillDetailDTO
             {
                 GuidId = bill.Id,
@@ -74,13 +75,14 @@ namespace Shop.Api.Repository
                 Email = bill.UserApp.Email,
                 Detail = bill.BillDetails?.Select(b => new DetailBill
                 {
-                    Price = b.Price,
+                    Price = b.Price?? 0,
                     ProductId = b.Product.Id,
                     ProductName = b.Product.Name,
                     Qty = b.Totals,
                     IM = _imageServices.Parse(b.Product.Image)
                 }).ToList()
             };
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
             return result;
         }
 
@@ -213,7 +215,7 @@ namespace Shop.Api.Repository
             {
                 throw new Exception(ex.ToString());
             }
-           /* IList<string> keyPushlish = new List<string>();
+            /*IList<string> keyPushlish = new List<string>();
             foreach (var i in Image)
             {
                 var imKey = new StringBuilder($"image:{Guid.NewGuid()}");

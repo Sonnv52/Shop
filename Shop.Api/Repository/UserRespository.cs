@@ -316,5 +316,17 @@ namespace Shop.Api.Repository
                 return true;
             } catch (Exception ex) { return false; }
         }
+
+        public async Task<bool> ChangePassword(string email, string currentPassword, string newPassword)
+        {
+            var user = await  _userManager.FindByNameAsync(email);
+            if (user == null)
+            {
+                return false;
+            }
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+
+            return result.Succeeded;
+        }
     }
 }

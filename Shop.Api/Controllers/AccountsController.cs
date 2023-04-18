@@ -169,5 +169,17 @@ namespace Shop.Api.Controllers
             var result = await _userRepository.ChangeStatusAsync(email,status);
             return Ok(result);
         }
+
+        [HttpPatch]
+        [Route("/ChangePassword")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> ChangePasswordAsync(string currentPassword, string newPassword)
+        {
+            string userName = User.FindFirstValue(ClaimTypes.Name);
+            var result = await _userRepository.ChangePassword(userName,currentPassword, newPassword);
+            if(result) 
+                return Ok("Done");
+            return StatusCode(450, false);
+        }
     }
 }

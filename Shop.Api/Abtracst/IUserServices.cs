@@ -18,5 +18,6 @@ namespace Shop.Api.Abtracst
         public Task<UserApp> GetUserByEmailAsync(string email);
         public Task<PagedList<UserApp>> GetAllUserAsync(int page, int pageSize);
         public Task<bool> ChangeStatusAsync(string email, bool status);
+        public Task<bool> ChangePassword(string email, string currentPassword, string newPassword);
     }
 }
