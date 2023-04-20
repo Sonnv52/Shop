@@ -18,6 +18,7 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Page;
+using NuGet.Common;
 
 namespace Shop.Api.Repository
 {
@@ -42,7 +43,7 @@ namespace Shop.Api.Repository
         public async Task<string> SignUpADAsync(SignUpUser model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
-            if (userExists != null)
+            if (userExists is not null)
                 return "Exsit!!!";
 
             UserApp user = new()
@@ -75,7 +76,7 @@ namespace Shop.Api.Repository
         public async Task<string> SignUpAsync(SignUpUser model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
-            if (userExists != null)
+            if (userExists is not null)
                 return "Exsit!!!";
 
             UserApp user = new()
@@ -103,11 +104,15 @@ namespace Shop.Api.Repository
         public async Task<AuthenRespone> SignInAsync(SignInUser model)
         {
             UserApp user = await _userManager.FindByNameAsync(model.Email);
+            if(user is null)
+            {
+                return new AuthenRespone { Token = "false" };
+            }
             if (!user.LockoutEnabled)
             {
                 return new AuthenRespone { Token = "Tài khoản đã bị vô hiệu hóa!!" };
             }
-            if (user != null && await _userManager.CheckPasswordAsync(user, model.Password))
+            if (user is not null && await _userManager.CheckPasswordAsync(user, model.Password))
             {
                 var userRoles = await _userManager.GetRolesAsync(user);
                 var authClaims = new List<Claim>
@@ -164,7 +169,7 @@ namespace Shop.Api.Repository
         public async Task<string> SignUpUserAsync(SignUpUser model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
-            if (userExists != null)
+            if (userExists is not null)
                 return "Exsit";
             UserApp user = new()
             {
@@ -172,7 +177,8 @@ namespace Shop.Api.Repository
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Email,
                 Name = model.Name,
-                Adress = model.Adress
+                Adress = model.Adress,
+                PhoneNumber = model.PhoneNumber
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
@@ -196,15 +202,15 @@ namespace Shop.Api.Repository
         public async Task<string> SetProfileUser(SignUpUser user, string mail)
         {
             var usercurent = await _userManager.FindByEmailAsync(mail);
-            if (user.Adress != null)
+            if (user.Adress is not null)
             {
                 usercurent.Adress = user.Adress;
             }
-            if (user.PhoneNumber != null)
+            if (user.PhoneNumber is not null)
             {
                 usercurent.PhoneNumber = user.PhoneNumber;
             }
-            if (user.Name != null)
+            if (user.Name is not null)
             {
                 usercurent.Name = user.Name;
             }
@@ -218,7 +224,7 @@ namespace Shop.Api.Repository
             string? accessToken = authenRefresh.Token;
             string? refreshToken = authenRefresh.RefreshToken;
             var principal = await Task.Run(() => GetPrincipalFromExpiredToken(accessToken));
-            if (principal == null)
+            if (principal is null)
             {
                 return new AuthenRespone
                 {
@@ -232,7 +238,7 @@ namespace Shop.Api.Repository
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
             var user = await _userManager.FindByNameAsync(username);
 
-            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
+            if (user is null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.Now)
             {
                 return new AuthenRespone
                 {
@@ -279,7 +285,7 @@ namespace Shop.Api.Repository
         public async Task<ResponseUser> ReVokeAsync(string email)
         {
             var user = await _userManager.FindByNameAsync(email);
-            if (user == null) return new ResponseUser
+            if (user is null) return new ResponseUser
             {
                 Status = "false",
                 Message = new List<string>()
@@ -301,14 +307,14 @@ namespace Shop.Api.Repository
 
         public async Task<PagedList<UserApp>> GetAllUserAsync(int page , int pageSize)
         {
-            var usersInRole = await _userManager.GetUsersInRoleAsync("user");
+            var usersInRole = await _userManager.GetUsersInRoleAsync("User");
             return usersInRole.GetPage(page, pageSize);
         }
 
         public async Task<bool> ChangeStatusAsync(string email, bool status)
         {
             var user = await _userManager.FindByNameAsync(email);
-            if (user == null) return false;
+            if (user is null) return false;
             user.LockoutEnabled = status;
             try
             {
@@ -320,13 +326,23 @@ namespace Shop.Api.Repository
         public async Task<bool> ChangePassword(string email, string currentPassword, string newPassword)
         {
             var user = await  _userManager.FindByNameAsync(email);
-            if (user == null)
+            if (user is null)
             {
                 return false;
             }
             var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
 
             return result.Succeeded;
+        }
+
+        public async Task<string> ResetPasswordAsync(string email)
+        {
+            var user = await _userManager.FindByNameAsync(email);
+            if (user is null) return "User not found!";
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            if (String.IsNullOrEmpty(token)) throw new ArgumentException("Fail");
+
+            return token;
         }
     }
 }

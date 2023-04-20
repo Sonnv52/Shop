@@ -17,7 +17,8 @@ namespace Shop.Api.Controllers.Admin
     {
         private readonly IOrderServices _orderServices;
         private readonly NewDBContext _dbContext;
-        public OrderAdminController(NewDBContext dbContext, IOrderServices orderServices) { 
+        public OrderAdminController(NewDBContext dbContext, IOrderServices orderServices)
+        {
             _orderServices = orderServices;
             _dbContext = dbContext;
         }
@@ -37,15 +38,15 @@ namespace Shop.Api.Controllers.Admin
             var result = await _orderServices.SetBillAsync(setBills);
             return Ok(result);
         }
-       [HttpGet]
+        [HttpGet]
         [Route("/GetAllBill")]
         // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBillAsync([FromQuery] PageQuery page)
         {
-            var bill =await _orderServices.GetAllBillAsync(page.pageIndex, page.pageSize);
+            var bill = await _orderServices.GetAllBillAsync(page.pageIndex, page.pageSize);
             return Ok(bill);
-            
+
         }
-       
+
     }
 }

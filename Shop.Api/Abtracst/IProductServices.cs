@@ -2,7 +2,6 @@
 using Shop.Api.Models.CreateModel;
 using Shop.Api.Models.Products;
 using Shop.Api.Data;
-using Shop.Api.Models;
 
 namespace Shop.Api.Abtracst
 {
@@ -17,5 +16,6 @@ namespace Shop.Api.Abtracst
         public Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size);
         public Task<int> CheckQtyAsync(int quanlity, Guid id, string size);
         public Task<bool> SetProductAsync( ProductAdd product);
+        public Task<bool> Set2ProductAsync(ProductAdd product);
     }
 }

@@ -16,6 +16,8 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
 using Shop.Api.Models.Page;
+using System.Drawing.Printing;
+using System.Net.WebSockets;
 
 namespace Shop.Api.Repository
 {
@@ -54,35 +56,33 @@ namespace Shop.Api.Repository
                 email = b.UserApp.Email,
                 Name= b.UserApp.Name
             });
-            var k = billPage.ToPagedList(page, pageSize);
-            return k;
+            var billResult = billPage.ToPagedList(page, pageSize);
+            return billResult;
         }
 
         public async Task<BillDetailDTO> GetBillDetailAsync(Guid id)
         {
-            var bill = await _dbContext.Bills.Where(b => b.Id == id).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
-            if (bill == null)
+            var bill = await _dbContext.Bills!.Where(b => b.Id == id).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
+            if (bill is null)
                 return new BillDetailDTO
-                {
+                {};
 
-                };
-#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
             var result = new BillDetailDTO
             {
                 GuidId = bill.Id,
                 OrderDate = bill.OderDate,
                 OrderStatus = bill.Status,
                 Email = bill.UserApp.Email,
-                Detail = bill.BillDetails?.Select(b => new DetailBill
+                Detail = bill!.BillDetails!.Select(b => new DetailBill
                 {
                     Price = b.Price?? 0,
-                    ProductId = b.Product.Id,
+                    ProductId = b.Product!.Id,
                     ProductName = b.Product.Name,
                     Qty = b.Totals,
                     IM = _imageServices.Parse(b.Product.Image)
                 }).ToList()
             };
-#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
+
             return result;
         }
 
@@ -102,7 +102,7 @@ namespace Shop.Api.Repository
             {
                 foreach (var billDetail in bill.BillDetails)
                 {
-                    if (billDetail.Product == null) continue;
+                    if (billDetail.Product is null) continue;
                     var dto = new BillDTO
                     {
                         id = billDetail.Id,
@@ -121,12 +121,26 @@ namespace Shop.Api.Repository
             return results;
         }
 
+        public async Task<IList<BillList>> GetYourBillAsync(string email)
+        {
+            UserApp customer = await _userServices.GetUserByEmailAsync(email);
+            var bills = _dbContext.Bills.Include(b => b.UserApp).Include(b => b.BillDetails)
+                .ThenInclude(b => b.Product).Where(b => b.UserApp.Id == customer.Id).OrderByDescending(b => b.OderDate);
+            if(bills is null)
+            {
+                return new List<BillList>();
+            }
+            var billPage = bills.Select(b => new BillList(b)
+            ).ToList();
+            return billPage;
+
+        }
         public async Task<double> GetPriceAsync(IList<ProductsRequest?> products)
         {
             double? total = default(double);
             foreach (ProductsRequest? product in products)
             {
-                if (product == null) continue;
+                if (product is null) continue;
                 var productFind = await _dbContext.Products.FindAsync(product?.id);
                 var qty = await _productServices.CheckQtyAsync(product.Qty, product.id, product.Size);
                 if (qty < 0) return 0.0;
@@ -150,10 +164,9 @@ namespace Shop.Api.Repository
                 BillDetails = new List<BillDetail>()
             };
             //Check product qty in DB
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-            foreach (var Order in request.Products)
+            foreach (var Order in request.Products!)
             {
-                if (Order == null)
+                if (Order is null)
                 {
                     continue;
                 }
@@ -165,7 +178,7 @@ namespace Shop.Api.Repository
                .Where(ps => ps.Product.Id == Order.id)
                .Select(ps => ps.Product);
                 Product? pr = product?.FirstOrDefault();
-                if (pr == null)
+                if (pr is null)
                 {
                     return new OrderLog
                     {
@@ -176,7 +189,7 @@ namespace Shop.Api.Repository
                 else
                 {
                     //Get list image
-                    string path = product.Select(p => Path.Combine(p.Image ?? "")).FirstOrDefault().ToString();
+                    string path = product!.Select(p => Path.Combine(p.Image ?? "")).FirstOrDefault()!.ToString();
                     Image.Add(await System.IO.File.ReadAllBytesAsync(path));
                     //Create billDetail
                     BillDetail billDetail = new BillDetail
@@ -197,7 +210,7 @@ namespace Shop.Api.Repository
                             Status = false
                         };
                     }
-                    await _dbContext.BillDetails.AddAsync(billDetail);
+                    await _dbContext!.BillDetails.AddAsync(billDetail);
                 }
             }
             foreach (var Order in request.Products)
@@ -219,7 +232,7 @@ namespace Shop.Api.Repository
             foreach (var i in Image)
             {
                 var imKey = new StringBuilder($"image:{Guid.NewGuid()}");
-                if (i == null) continue;
+                if (i is null) continue;
                 try
                 {
                     await _cache.SetStringAsync(imKey.ToString(), Convert.ToBase64String(i), new DistributedCacheEntryOptions
@@ -241,9 +254,9 @@ namespace Shop.Api.Repository
         {
            foreach(var setBill in setBills)
             {
-                if(setBill == null) continue;
+                if(setBill is null) continue;
                 var bill = await _dbContext.Bills.FirstOrDefaultAsync(b => b.Id == setBill.id);
-                if(bill == null) continue;
+                if(bill is null) continue;
                 if (setBill.status == (int)OrderStatus.Shipping)
                     bill.Status = "Đang giao hàng";
                 else if (setBill.status == (int)OrderStatus.Canceled)
@@ -262,6 +275,41 @@ namespace Shop.Api.Repository
                 return false;
             }
             return true;
+        }
+
+        public async Task<BillDetailDTO> GetYourBillDetaillAsync(string email, Guid idBill)
+        {
+            var custommer = await _userServices.GetUserByEmailAsync(email);
+            var bill = await _dbContext.Bills!.Where(b => b.Id == idBill).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
+            if (bill is null)
+                return new BillDetailDTO { };
+
+            if (bill.UserApp.Id != custommer.Id)
+            {
+                _logger.LogCritical("Get bill not by customer!!");
+                return new BillDetailDTO { };
+            }
+            if(bill.BillDetails is null) {
+                return new BillDetailDTO { };
+            }
+#pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
+            var result = new BillDetailDTO
+            {
+                GuidId = bill.Id,
+                OrderDate = bill.OderDate,
+                OrderStatus = bill.Status,
+                Email = bill.UserApp.Email,
+                Detail = bill.BillDetails.Select(b => new DetailBill
+                {
+                    Price = b.Price ?? 0,
+                    ProductId = b.Product!.Id,
+                    ProductName = b.Product.Name,
+                    Qty = b.Totals,
+                    IM = _imageServices.Parse(b.Product.Image)
+                }).ToList()
+            };
+#pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
+            return result;
         }
     }
 }

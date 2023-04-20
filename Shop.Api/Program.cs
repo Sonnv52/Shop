@@ -88,6 +88,8 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:Secret"]))
     };
 });
+//protection
+builder.Services.Configure<DataProtectionTokenProviderOptions>(pr => pr.TokenLifespan = TimeSpan.FromHours(10));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowOrigin",

@@ -1,6 +1,5 @@
 ﻿using Shop.Api.Data;
 using Shop.Api.Models.Products;
-using Shop.Api.Data;
 
 namespace Shop.Api.Models.CreateModel
 {

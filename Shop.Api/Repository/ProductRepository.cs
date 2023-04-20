@@ -13,6 +13,7 @@ using Shop.Api.Abtracst;
 using Microsoft.CodeAnalysis;
 using Shop.Api.Repository;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Data;
 
 namespace Shop.Api.Repository
 {
@@ -33,7 +34,7 @@ namespace Shop.Api.Repository
 
             var product = _dbContext.Products.Include(p => p.Sizes).FirstOrDefault(p => p.Id == id);
             var size = product?.Sizes.Select(s => _mapper.Map<SizeDTO>(s)).ToList();
-            if (product == null)
+            if (product is null)
             {
                 throw new Exception("product not found!!!");
             }
@@ -65,11 +66,11 @@ namespace Shop.Api.Repository
             #endregion
             #region Fillter
 
-            if (search.from != null)
+            if (search.from is not null)
             {
                 products = products.Where(pro => pro.Price >= search.from);
             }
-            if (search.to != null)
+            if (search.to is not null)
             {
                 products = products.Where(pro => pro.Price <= search.to);
             }
@@ -105,7 +106,7 @@ namespace Shop.Api.Repository
 
         public async Task<string> AddProductAsysnc(ProductAdd product)
         {
-            if (product.Image != null)
+            if (product.Image is not null)
             {
                 var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
@@ -118,9 +119,9 @@ namespace Shop.Api.Repository
                 var pro = new Product
                 {
                     Id = Guid.NewGuid(),
-                    Name = product.Name != null ? product.Name : "Unknow",
+                    Name = product.Name is not null ? product.Name : "Unknow",
                     Price = (double)product.Price,
-                    Description = product.Description != null ? product.Description : "Unknow",
+                    Description = product.Description is not null ? product.Description : "Unknow",
                     Image = imagePath,
                 };
 #pragma warning restore CS8629 // Nullable value type may be null.
@@ -135,11 +136,11 @@ namespace Shop.Api.Repository
         public async Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes)
         {
             Product? product = await _dbContext.Products.FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
-            if (product == null)
+            if (product is null)
             {
                 throw new Exception("No exs product");
             }
-            if (stringSizes.StringSize == null)
+            if (stringSizes.StringSize is null)
             {
                 return "Size cant be null!!";
             }
@@ -189,7 +190,7 @@ namespace Shop.Api.Repository
             var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id && s.size == size);
             var szUpdate = productSize.FirstOrDefault();
 
-            if (szUpdate == null)
+            if (szUpdate is null)
             {
                 throw new Exception("Size not found.");
             }
@@ -209,7 +210,7 @@ namespace Shop.Api.Repository
         {
             var productSize = _dbContext.Sizes.Where(s => s.Products.Id == id && s.size == size);
             var szUpdate = await productSize.FirstOrDefaultAsync();
-            if (szUpdate == null)
+            if (szUpdate is null)
             {
                 return 0;
             }
@@ -219,12 +220,12 @@ namespace Shop.Api.Repository
         public async Task<bool> SetProductAsync(ProductAdd product)
         {
             Product? productModifi = _dbContext.Products.FirstOrDefault(p => p.Id == product.id);
-            if (productModifi == null)
+            if (productModifi is null)
             {
                 return false;
             }
             string? imagePath = null;
-            if (product.Image != null)
+            if (product.Image is not null)
             {
                 if (!string.IsNullOrEmpty(productModifi.Image))
                 {
@@ -247,6 +248,49 @@ namespace Shop.Api.Repository
             productModifi.Description = product.Description ?? productModifi.Description;
             _dbContext.Entry(productModifi).State = EntityState.Modified;
             try { await _dbContext.SaveChangesAsync(); return true; } catch { return false; }
+        }
+        public async Task<bool> Set2ProductAsync(ProductAdd product)
+        {
+            using var transaction = _dbContext.Database.BeginTransaction(IsolationLevel.Serializable);
+            try
+            {
+                Product? productModifi = _dbContext.Products.FirstOrDefault(p => p.Id == product.id);
+                if (productModifi is null)
+                {
+                    return false;
+                }
+                string? imagePath = null;
+                if (product.Image is not null)
+                {
+                    if (!string.IsNullOrEmpty(productModifi.Image))
+                    {
+                        var oldImagePath = Path.Combine(productModifi.Image);
+                        if (File.Exists(oldImagePath))
+                        {
+                            File.Delete(oldImagePath);
+                        }
+                    }
+                    var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
+                    imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
+                    using (var stream = new FileStream(imagePath, FileMode.Create))
+                    {
+                        await product.Image.CopyToAsync(stream);
+                    }
+                }
+                productModifi.Price = product.Price ?? productModifi.Price;
+                productModifi.Name = product.Name ?? productModifi.Name;
+                productModifi.Image = imagePath ?? productModifi.Image;
+                productModifi.Description = product.Description ?? productModifi.Description;
+                _dbContext.Entry(productModifi).State = EntityState.Modified;
+                _dbContext.SaveChanges();
+                transaction.Commit();
+            }
+            catch(Exception)
+            {
+                transaction.Rollback();
+                throw;
+            }
+            return true;
         }
     }
 }

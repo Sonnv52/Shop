@@ -70,7 +70,7 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> SignInAsync(SignInUser user)
         {
             var result = await _userRepository.SignInAsync(user);
-            if(result == null || String.IsNullOrEmpty(result.Token))
+            if(result is null || String.IsNullOrEmpty(result.Token))
             {
                 return StatusCode(403, "Can't authen this account");
             }
@@ -87,7 +87,7 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> GetProfileAsync([FromBody] String Email)
         {
             var user = await _userRepository.GetProfileUser(Email);
-            if (user == null)
+            if (user is null)
             {
                 return StatusCode(500, "Internal Server Error");
             }
@@ -100,7 +100,7 @@ namespace Shop.Api.Controllers
         {
             var userName = User.FindFirstValue(ClaimTypes.Name);
             var result = await _userRepository.GetProfileUser(userName);
-            if (result == null)
+            if (result is null)
             {
                 return StatusCode(500, "Internal Server Error");
             }
@@ -180,6 +180,22 @@ namespace Shop.Api.Controllers
             if(result) 
                 return Ok("Done");
             return StatusCode(450, false);
+        }
+
+        [HttpPost]
+        [Route("/FogotPassWord")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPasswordAsync(string email)
+        {
+            if(String.IsNullOrEmpty(email)) return BadRequest();
+            return Ok();
+        }
+
+        [HttpPost]
+        [Route("/ResetPassword")]
+        public async Task<IActionResult> ResetPasswordAsync()
+        {
+            return Ok();
         }
     }
 }

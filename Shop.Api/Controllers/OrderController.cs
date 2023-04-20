@@ -55,7 +55,7 @@ namespace Shop.Api.Controllers
         [Route("GetTotal")]
         public async Task<IActionResult> GetTotalAsync(IList<ProductsRequest?> products)
         {
-            if (products == null)
+            if (products is null)
             {
                 return BadRequest();
             }
@@ -69,6 +69,7 @@ namespace Shop.Api.Controllers
             BlobContainerClient blod = new BlobContainerClient(_configuration["AzureString"], "shoimage");
             using (var stream = new MemoryStream())
             {
+                if(product.Image == null) { return BadRequest(product.Name); }
                 await product.Image.CopyToAsync(stream);
                 stream.Position = 0;
                 await blod.UploadBlobAsync(product.Image.FileName, stream);
@@ -128,7 +129,17 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> GetBillAsync()
         {
             string email = User.FindFirstValue(ClaimTypes.Name);
-            var result = await _orderServices.GetBillsAsync(email);
+            var result = await _orderServices.GetYourBillAsync(email);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        [Route("/OrderDetail")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> GetBillDetailAsync(Guid id)
+        {
+            string email = User.FindFirstValue(ClaimTypes.Name);
+            var result = await _orderServices.GetYourBillDetaillAsync(email,id);
             return Ok(result);
         }
     }

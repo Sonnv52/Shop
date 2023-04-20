@@ -46,7 +46,7 @@ namespace Shop.Api.Controllers
                 var cacheKey = $"products:{search?.key}:{search?.sort}:{search?.from}:{search?.from}:{search?.PageSize}:{search?.PageIndex}";
                 // Check if the search query is already cached in Redis
                 var cachedResult = await _cache.GetStringAsync(cacheKey);
-                if (cachedResult != null)
+                if (cachedResult is not null)
                 {
                     // If the result is cached, return it from the cache
                     return Ok(JsonConvert.DeserializeObject<PageProduct>(cachedResult));
@@ -124,7 +124,7 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            if (product is null)
             {
                 return NotFound();
             }
@@ -140,7 +140,7 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> CencelDeleteAsync(Guid id)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            if (product is null)
             {
                 return NotFound();
             }

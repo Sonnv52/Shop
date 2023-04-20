@@ -77,7 +77,7 @@ namespace Shop.Api.Controllers.Admin
         public async Task<IActionResult> DeleteProduct(Guid id)
         {
             var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            if (product is null)
             {
                 return NotFound();
             }
@@ -86,11 +86,6 @@ namespace Shop.Api.Controllers.Admin
             await _context.SaveChangesAsync();
 
             return NoContent();
-        }
-
-        private bool ProductExists(Guid id)
-        {
-            return _context.Products.Any(e => e.Id == id);
         }
     }
 }

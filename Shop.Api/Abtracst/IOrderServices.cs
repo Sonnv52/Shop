@@ -14,5 +14,7 @@ namespace Shop.Api.Abtracst
         Task<bool> SetBillAsync(IList<SetBillRequest> setBills);
         Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize);
         Task<BillDetailDTO> GetBillDetailAsync(Guid id);
-      }
+        Task<IList<BillList>> GetYourBillAsync(string email);
+        Task<BillDetailDTO> GetYourBillDetaillAsync(string email, Guid idBill);
+    }
 }

@@ -2,6 +2,7 @@
 using Shop.Api.Data;
 using Shop.Api.Models;
 using Shop.Api.Models.Page;
+using OneOf;
 
 namespace Shop.Api.Abtracst
 {
@@ -19,5 +20,6 @@ namespace Shop.Api.Abtracst
         public Task<PagedList<UserApp>> GetAllUserAsync(int page, int pageSize);
         public Task<bool> ChangeStatusAsync(string email, bool status);
         public Task<bool> ChangePassword(string email, string currentPassword, string newPassword);
+        public Task<string> ResetPasswordAsync(string email);
     }
 }

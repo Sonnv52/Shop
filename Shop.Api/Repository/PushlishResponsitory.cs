@@ -17,7 +17,7 @@ namespace Shop.Api.Repository
         }
         public async Task PushlishAsync(ProductSend data)
         {
-            if (data != null)
+            if (data is not null)
             {
                 Uri uri = new Uri($"rabbitmq://localhost/{_exchangeName}");
                 var endPoint = await _bus.GetSendEndpoint(uri);
