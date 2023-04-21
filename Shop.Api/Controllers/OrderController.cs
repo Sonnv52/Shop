@@ -52,7 +52,7 @@ namespace Shop.Api.Controllers
         }
 
         [HttpPost]
-        [Route("GetTotal")]
+        [Route("/GetTotal")]
         public async Task<IActionResult> GetTotalAsync(IList<ProductsRequest?> products)
         {
             if (products is null)
@@ -134,12 +134,21 @@ namespace Shop.Api.Controllers
         }
 
         [HttpGet]
-        [Route("/OrderDetail")]
+        [Route("OrderDetail")]
         [Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<IActionResult> GetBillDetailAsync(Guid id)
         {
             string email = User.FindFirstValue(ClaimTypes.Name);
             var result = await _orderServices.GetYourBillDetaillAsync(email,id);
+            return Ok(result);
+        }
+
+        [HttpPatch]
+        [Route("/CancelBill")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> CancelBillAsync(Guid id)
+        {
+            var result = true;
             return Ok(result);
         }
     }

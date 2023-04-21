@@ -8,13 +8,14 @@ namespace Shop.Api.Abtracst
 {
     public interface IOrderServices
     {
-        public Task<OrderLog> OrderAsync(OrderRequest request, string email, CancellationToken token);
-        public Task<double> GetPriceAsync(IList<ProductsRequest?> products);
-        public Task<IList<BillDTO?>> GetBillsAsync(string email);
+        Task<OrderLog> OrderAsync(OrderRequest request, string email, CancellationToken token);
+        Task<double> GetPriceAsync(IList<ProductsRequest?> products);
+        Task<IList<BillDTO?>> GetBillsAsync(string email);
         Task<bool> SetBillAsync(IList<SetBillRequest> setBills);
         Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize);
         Task<BillDetailDTO> GetBillDetailAsync(Guid id);
         Task<IList<BillList>> GetYourBillAsync(string email);
         Task<BillDetailDTO> GetYourBillDetaillAsync(string email, Guid idBill);
+        Task<string> CancelAsync(string email, Guid id);
     }
 }

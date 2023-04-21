@@ -108,7 +108,13 @@ namespace Shop.Api.Repository
         {
             if (product.Image is not null)
             {
-                var imageName = Guid.NewGuid().ToString() + Path.GetExtension(product.Image.FileName);
+                var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                var extension = Path.GetExtension(product.Image.FileName);
+                if (!validExtensions.Contains(extension.ToLower()))
+                {
+                    throw new Exception("Invalid file format. Only JPG, PNG, and GIF are allowed.");
+                }
+                var imageName = Guid.NewGuid().ToString() + extension;
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwroot", "image", "products", imageName);
                 using (var stream = new FileStream(imagePath, FileMode.Create))
                 {
@@ -135,7 +141,7 @@ namespace Shop.Api.Repository
 
         public async Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes)
         {
-            Product? product = await _dbContext.Products.FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
+            Product? product = await _dbContext.Products.Include(p => p.Sizes).FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
             if (product is null)
             {
                 throw new Exception("No exs product");
@@ -144,22 +150,39 @@ namespace Shop.Api.Repository
             {
                 return "Size cant be null!!";
             }
-            foreach (var i in stringSizes.StringSize)
+            var groupedSizes = stringSizes.StringSize
+             .GroupBy(s => s.SizeProduct)
+             .Select(g => new StringSize
+             {
+                 SizeProduct = g.Key,
+                 Qty = g.Sum(s => s.Qty)
+             })
+             .ToList();
+            foreach (var i in groupedSizes)
             {
-                var Size = new Size
+                var existingSize = await _dbContext.Sizes.Include(s => s.Products)
+                 .FirstOrDefaultAsync(s => s.size == i.SizeProduct && s.Products.Id == product.Id);
+                if (existingSize is null)
                 {
-                    IdSizelog = Guid.NewGuid(),
-                    size = i.SizeProduct,
-                    Qty = i.Qty,
-                    Products = product
-                };
-                try
-                {
-                    await _dbContext.Sizes.AddAsync(Size);
+                    var Size = new Size
+                    {
+                        IdSizelog = Guid.NewGuid(),
+                        size = i.SizeProduct,
+                        Qty = i.Qty,
+                        Products = product
+                    };
+                    try
+                    {
+                        await _dbContext.Sizes.AddAsync(Size);
+                    }
+                    catch (Exception)
+                    {
+                        return $"false to add for {product.Name}";
+                    }
                 }
-                catch (Exception)
+                else
                 {
-                    return $"false to add for {product.Name}";
+                    existingSize.Qty += i.Qty;
                 }
             }
             try
@@ -285,7 +308,7 @@ namespace Shop.Api.Repository
                 _dbContext.SaveChanges();
                 transaction.Commit();
             }
-            catch(Exception)
+            catch (Exception)
             {
                 transaction.Rollback();
                 throw;

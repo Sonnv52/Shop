@@ -311,5 +311,31 @@ namespace Shop.Api.Repository
 #pragma warning restore CS8619 // Nullability of reference types in value doesn't match target type.
             return result;
         }
+
+        public async Task<string> CancelAsync(string email, Guid id)
+        {
+            var customer = await _userServices.GetUserByEmailAsync(email);
+            if (customer is null)
+            {
+                throw new Exception("customer not found!!");
+            }
+            var bill = _dbContext.Bills.Include(b => b.UserApp)
+                .Where(b => b.Id == id && b.UserApp.Id == customer.Id).FirstOrDefault();
+            if(bill is null)
+            {
+                throw new Exception("Can find bill");
+            }
+            if (bill.Status == "Đã đặt hàng")
+                bill.Status = "Đã hủy đơn";
+            else return $"Không thể hủy đơn {bill.Status}";
+            _dbContext.Entry(bill).State = EntityState.Modified;
+            try { await _dbContext.SaveChangesAsync();
+                return "Đã hủy đơn";
+            }
+            catch (Exception ex) {
+                throw new Exception(ex.ToString());
+            };
+            
+        }
     }
 }

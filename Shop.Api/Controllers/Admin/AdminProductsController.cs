@@ -30,7 +30,7 @@ namespace Shop.Api.Controllers.Admin
 
         // PUT: api/AdminProducts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
+        [HttpPut]
         public async Task<IActionResult> PutProduct( [FromForm] ProductAdd product)
         {
             var result = await _productServices.SetProductAsync(product);
