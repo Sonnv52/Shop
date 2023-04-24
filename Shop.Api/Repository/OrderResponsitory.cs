@@ -79,6 +79,7 @@ namespace Shop.Api.Repository
                     ProductId = b.Product!.Id,
                     ProductName = b.Product.Name,
                     Qty = b.Totals,
+                    Size = b.Size,
                     IM = _imageServices.Parse(b.Product.Image)
                 }).ToList()
             };
@@ -206,7 +207,7 @@ namespace Shop.Api.Repository
                     {
                         return new OrderLog
                         {
-                            Message = new List<string> { $"Fail to order item {await _productServices.GetProductName(Order.id)} với size là {Order.Size} chỉ còn {ok + Order.Qty}" },
+                            Message = new List<string> { $"{await _productServices.GetProductName(Order.id)} với size là {Order.Size} chỉ còn {ok + Order.Qty}" },
                             Status = false
                         };
                     }
@@ -280,7 +281,8 @@ namespace Shop.Api.Repository
         public async Task<BillDetailDTO> GetYourBillDetaillAsync(string email, Guid idBill)
         {
             var custommer = await _userServices.GetUserByEmailAsync(email);
-            var bill = await _dbContext.Bills!.Where(b => b.Id == idBill).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
+            var bill = await _dbContext.Bills!.Where(b => b.Id == idBill).Include(b => b.UserApp).Include(x => x.BillDetails)
+                .ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
             if (bill is null)
                 return new BillDetailDTO { };
 
@@ -319,6 +321,7 @@ namespace Shop.Api.Repository
             {
                 throw new Exception("customer not found!!");
             }
+            //Get Bill
             var bill = _dbContext.Bills.Include(b => b.UserApp)
                 .Where(b => b.Id == id && b.UserApp.Id == customer.Id).FirstOrDefault();
             if(bill is null)
@@ -326,7 +329,9 @@ namespace Shop.Api.Repository
                 throw new Exception("Can find bill");
             }
             if (bill.Status == "Đã đặt hàng")
+            {
                 bill.Status = "Đã hủy đơn";
+            }
             else return $"Không thể hủy đơn {bill.Status}";
             _dbContext.Entry(bill).State = EntityState.Modified;
             try { await _dbContext.SaveChangesAsync();

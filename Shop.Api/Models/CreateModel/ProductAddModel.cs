@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Shop.Api.Models.CreateModel
 {
-    public class ProductAdd
+    public class ProductAddModel
     {
         public Guid? id { get; set; }
         public string? Name { get; set; }

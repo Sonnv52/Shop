@@ -32,20 +32,20 @@ namespace Shop.Api.Controllers.Admin
 
         [HttpPatch]
         [Route("/SetBill/Status")]
-        // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<IActionResult> SetBillAsync(IList<SetBillRequest> setBills)
         {
             var result = await _orderServices.SetBillAsync(setBills);
             return Ok(result);
         }
+
         [HttpGet]
         [Route("/GetAllBill")]
-        // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+        [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBillAsync([FromQuery] PageQuery page)
         {
             var bill = await _orderServices.GetAllBillAsync(page.pageIndex, page.pageSize);
             return Ok(bill);
-
         }
 
     }

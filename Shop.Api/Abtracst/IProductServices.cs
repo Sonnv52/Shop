@@ -9,13 +9,13 @@ namespace Shop.Api.Abtracst
     {
         public Task<PageProduct> GetProductAsync(SearchModel search);
         public Task<ProductDTO> GetOneProductAsync(Guid id);
-        public Task<string> AddProductAsysnc(ProductAdd product);
-        public Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes);
-        public Task<string> AddProductAzureAsync(ProductAdd product);
+        public Task<string> AddProductAsysnc(ProductAddModel product);
+        public Task<string> AddSizeProductAsync(AddSizeModel<StringSize> stringSizes);
+        public Task<string> AddProductAzureAsync(ProductAddModel product);
         public Task<string> GetProductName(Guid id);
         public Task<bool> UpdateQuantySizeAsync(int quanlity, Guid id, string size);
         public Task<int> CheckQtyAsync(int quanlity, Guid id, string size);
-        public Task<bool> SetProductAsync( ProductAdd product);
-        public Task<bool> Set2ProductAsync(ProductAdd product);
+        public Task<bool> SetProductAsync( ProductAddModel product);
+        public Task<bool> Set2ProductAsync(ProductAddModel product);
     }
 }

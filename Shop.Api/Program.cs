@@ -18,10 +18,18 @@ using Shop.Api.Repository;
 using MassTransit;
 using Share.Message;
 using MassTransit.Transports.Fabric;
+using Shop.Api.MilderWare;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Shop.Api.Filter;
+using ForgotPasswordService.Model;
+using MySqlConnector;
+using ForgotPasswordService.Message;
+using System.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+var configuration = builder.Configuration;
 builder.Services.AddMassTransit(x =>
 {
     x.AddBus(provider => Bus.Factory.CreateUsingRabbitMq(config =>
@@ -100,21 +108,26 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+//Redis
 builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = builder.Configuration["RedisCacheServerUrl"];
     options.InstanceName = "Product";
 });
+//DI
 builder.Services.AddScoped<IUserServices, UserRespository>();
 builder.Services.AddScoped<IProductServices, ProductRepository>();
-builder.Services.AddScoped<IAccount, Class1>();
 builder.Services.AddScoped<IPushlishService<ProductSend>,PushlishResponsitory>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
 builder.Services.AddScoped<IOrderServices, OrderResponsitory>();
-
+//Add email config
+var emailCofig = configuration.GetSection("EmailCofiguration").Get<EmailCofiuration>();
+builder.Services.AddSingleton(emailCofig);
+builder.Services.AddScoped<ISendMailService<TokenResetMessage>, EmailRepository>();
 builder.Services.AddIdentity<UserApp, IdentityRole>()
     .AddEntityFrameworkStores<NewDBContext>()
     .AddDefaultTokenProviders();
+builder.Services.AddTransient<FileFormatFilter>();
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.Password.RequireDigit = true;
@@ -139,6 +152,7 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.JwtAuthenticationMiddleware();
 // Authentication & Authorization
 app.UseAuthentication();
 app.UseAuthorization();

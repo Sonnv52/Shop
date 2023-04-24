@@ -2,7 +2,7 @@
 
 namespace Shop.Api.Models
 {
-    public class SignInUser
+    public class SignInUserModel
     {
         [Required, EmailAddress(ErrorMessage ="Email is required")]
         public string? Email { get; set; }

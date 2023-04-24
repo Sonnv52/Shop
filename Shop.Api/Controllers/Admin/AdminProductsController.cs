@@ -12,6 +12,7 @@ using Shop.Api.Data;
 using System.Security.Claims;
 using Shop.Api.Repository;
 using Microsoft.AspNetCore.Authorization;
+using Shop.Api.Filter;
 
 namespace Shop.Api.Controllers.Admin
 {
@@ -31,7 +32,7 @@ namespace Shop.Api.Controllers.Admin
         // PUT: api/AdminProducts/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut]
-        public async Task<IActionResult> PutProduct( [FromForm] ProductAdd product)
+        public async Task<IActionResult> PutProduct( [FromForm] ProductAddModel product)
         {
             var result = await _productServices.SetProductAsync(product);
             if(result) return Ok();
@@ -46,8 +47,9 @@ namespace Shop.Api.Controllers.Admin
         // POST: api/AdminProducts
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("Add/Product")]
-       // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
-        public async Task<ActionResult<Product>> PostProduct([FromForm] ProductAdd product)
+        // [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
+        [ServiceFilter(typeof(FileFormatFilter))]
+        public async Task<ActionResult<Product>> PostProduct([FromForm] ProductAddModel product)
         {
             string result = await _productServices.AddProductAsysnc(product);
             /*try
@@ -63,7 +65,7 @@ namespace Shop.Api.Controllers.Admin
 
         //Add size for product after add product
         [HttpPut("addSize")]
-        public async Task<IActionResult> AddSizeAsync([FromBody] AddSize<StringSize> stringSizes)
+        public async Task<IActionResult> AddSizeAsync([FromBody] AddSizeModel<StringSize> stringSizes)
         {
             var result = await _productServices.AddSizeProductAsync(stringSizes);
             if(!result.Equals("Suggest!!"))

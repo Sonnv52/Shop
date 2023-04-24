@@ -8,7 +8,7 @@ namespace Shop.Api.Mapper
     {
         public UserMap()
         {
-            CreateMap<ProfileUser, UserApp>().ReverseMap();
+            CreateMap<ProfileUserDTO, UserApp>().ReverseMap();
         }
     }
 }

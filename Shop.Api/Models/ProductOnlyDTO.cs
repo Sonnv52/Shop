@@ -2,7 +2,7 @@
 
 namespace Shop.Api.Models
 {
-    public class ProductT
+    public class ProductOnlyDTO
     {
         public Guid Id { get; set; }
       

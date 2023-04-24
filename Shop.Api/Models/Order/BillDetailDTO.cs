@@ -14,6 +14,7 @@
         public string? ProductName { get; set;}
         public double? Price { get; set; } = 0;
         public int Qty { get; set; } = 0;
+        public string? Size { get; set; }
         public byte[]? IM { get; set; }
     }
 }

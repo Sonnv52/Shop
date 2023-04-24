@@ -6,7 +6,7 @@ namespace Shop.Api.Mapper
     public class ProductMap: Profile
     {
         public ProductMap() {
-            CreateMap<ProductT, Product>().ReverseMap();
+            CreateMap<ProductOnlyDTO, Product>().ReverseMap();
             CreateMap<SizeDTO, Size>().ReverseMap();
         }
     }

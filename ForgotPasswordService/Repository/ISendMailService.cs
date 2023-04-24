@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ForgotPasswordService.Message;
 
 namespace ForgotPasswordService.Repository
 {
-    public class Class1 : IAccount
+    public interface ISendMailService<T> where T : class
     {
-        public async Task<string> GetAccount(string accountId)
-        {
-            return "Son";
-        }
+     public Task SendAsync(T message);
     }
 }

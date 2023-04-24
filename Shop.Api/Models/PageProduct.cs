@@ -2,7 +2,7 @@
 {
     public class PageProduct
     {
-        public IList<ProductT>? Products { get; set; }
+        public IList<ProductOnlyDTO>? Products { get; set; }
         public int TotalPages { get; set; } 
     }
 }

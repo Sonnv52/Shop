@@ -2,7 +2,7 @@
 
 namespace Shop.Api.Models
 {
-    public class SignUpUser
+    public class SignUpUserModel
     {
         public string? Name { get; set; }
         [System.ComponentModel.DataAnnotations.Compare("Email",

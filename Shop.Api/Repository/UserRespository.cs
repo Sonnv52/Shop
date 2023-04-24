@@ -19,6 +19,10 @@ using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Page;
 using NuGet.Common;
+using ForgotPasswordService.Message;
+using Newtonsoft.Json.Linq;
+using static System.Net.Mime.MediaTypeNames;
+using System.Net;
 
 namespace Shop.Api.Repository
 {
@@ -26,21 +30,22 @@ namespace Shop.Api.Repository
     {
         private readonly UserManager<UserApp> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly ISendMailService<TokenResetMessage> _send;
         private readonly SignInManager<UserApp> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
-        private readonly IAccount _account;
-        public UserRespository(UserManager<UserApp> userManager, SignInManager<UserApp> signInManager,
-            RoleManager<IdentityRole> roleManager, IMapper mapper, IAccount account, IConfiguration configuration)
+        public UserRespository(ISendMailService<TokenResetMessage> send, UserManager<UserApp> userManager, SignInManager<UserApp> signInManager,
+            RoleManager<IdentityRole> roleManager, IMapper mapper, IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _configuration = configuration;
             _roleManager = roleManager;
             _mapper = mapper;
-            _account = account;
+            _send= send;
         }
-        public async Task<string> SignUpADAsync(SignUpUser model)
+
+        public async Task<string> SignUpADAsync(SignUpUserModel model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
             if (userExists is not null)
@@ -55,6 +60,7 @@ namespace Shop.Api.Repository
                 Adress = model.Adress,
                 PhoneNumber = model.PhoneNumber
             };
+            if (model.Password is null) return "false";
             var result = await _userManager.CreateAsync(user, model.Password.Trim());
             if (!result.Succeeded)
                 return "false";
@@ -73,7 +79,8 @@ namespace Shop.Api.Repository
             }
             return "true";
         }
-        public async Task<string> SignUpAsync(SignUpUser model)
+
+        public async Task<string> SignUpAsync(SignUpUserModel model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
             if (userExists is not null)
@@ -88,6 +95,7 @@ namespace Shop.Api.Repository
                 Adress = model.Adress,
                 PhoneNumber= model.PhoneNumber
             };
+            if (model.Password is null) return "false";
             var result = await _userManager.CreateAsync(user, model.Password.Trim());
             if (!result.Succeeded)
                 return "false";
@@ -101,7 +109,7 @@ namespace Shop.Api.Repository
             return "true";
         }
 
-        public async Task<AuthenRespone> SignInAsync(SignInUser model)
+        public async Task<AuthenRespone> SignInAsync(SignInUserModel model)
         {
             UserApp user = await _userManager.FindByNameAsync(model.Email);
             if(user is null)
@@ -143,6 +151,7 @@ namespace Shop.Api.Repository
                 Token = "false"
             };
         }
+
         private static string GenerateRefreshToken()
         {
             var randomNumber = new byte[64];
@@ -166,7 +175,7 @@ namespace Shop.Api.Repository
             return token;
         }
 
-        public async Task<string> SignUpUserAsync(SignUpUser model)
+        public async Task<string> SignUpUserAsync(SignUpUserModel model)
         {
             var userExists = await _userManager.FindByNameAsync(model.Email);
             if (userExists is not null)
@@ -192,14 +201,14 @@ namespace Shop.Api.Repository
             return "success";
         }
 
-        public async Task<ProfileUser> GetProfileUser(string Email)
+        public async Task<ProfileUserDTO> GetProfileUser(string Email)
         {
             var userExists = await _userManager.FindByNameAsync(Email);
-            var user = _mapper.Map<ProfileUser>(userExists);
+            var user = _mapper.Map<ProfileUserDTO>(userExists);
             return user;
         }
 
-        public async Task<string> SetProfileUser(SignUpUser user, string mail)
+        public async Task<string> SetProfileUser(SignUpUserModel user, string mail)
         {
             var usercurent = await _userManager.FindByEmailAsync(mail);
             if (user.Adress is not null)
@@ -339,10 +348,26 @@ namespace Shop.Api.Repository
         {
             var user = await _userManager.FindByNameAsync(email);
             if (user is null) return "User not found!";
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            if (String.IsNullOrEmpty(token)) throw new ArgumentException("Fail");
+            var tokenReset = await _userManager.GeneratePasswordResetTokenAsync(user);
+            tokenReset = tokenReset.Replace("/", "1221");
+            if (String.IsNullOrEmpty(tokenReset)) throw new ArgumentException("Fail");
+            var resetLink = $"{_configuration["SettingDomainClient"]}/reset-password/{tokenReset}/{user.Email}";
+            _send.SendAsync(new TokenResetMessage(new[] { email }, "D-Shop Reset Password", $"{resetLink} Click Vào Đây Để Tạo Mật Khẩu Mới!!"));
+            return tokenReset;
+        }
 
-            return token;
+        public async Task<string> ChangResetPasswordAsync(ResetPasswordModel request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Username);
+            if (user is null)
+                return "false";
+            string token = request.TokenReset.Replace("1221", "/");
+            var resetPassResult = await _userManager.ResetPasswordAsync(user,token, request.Password);
+            if(resetPassResult.Succeeded)
+            {
+                return "true";
+            }
+            return "false";
         }
     }
 }

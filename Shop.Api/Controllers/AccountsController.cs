@@ -13,6 +13,7 @@ using Shop.Api.Models.ListLog;
 using Shop.Api.Repository;
 using Shop.Api.Models.Page;
 using Shop.Api.Models.Order;
+using ForgotPasswordService.Message;
 
 namespace Shop.Api.Controllers
 {
@@ -24,20 +25,20 @@ namespace Shop.Api.Controllers
         private readonly NewDBContext _newDBContext;
         private IHttpContextAccessor _httpContextAccessor;
         private readonly UserManager<UserApp> _userManager;
-        private readonly IAccount _account;
         private readonly ILogger<AccountsController> _logger;
+        private readonly ISendMailService<TokenResetMessage> _send;
         public AccountsController(IUserServices userRepository, NewDBContext newDBContext, IHttpContextAccessor httpContextAccessor,
-            UserManager<UserApp> userManager, IAccount account, ILogger<AccountsController> logger)
+            UserManager<UserApp> userManager, ILogger<AccountsController> logger, ISendMailService<TokenResetMessage> send)
         {
             _userRepository = userRepository;
             _newDBContext = newDBContext;
             _httpContextAccessor = httpContextAccessor;
             _userManager = userManager;
-            _account = account;
             _logger = logger;
+            _send = send;
         }
         [HttpPost("SignUp")]
-        public async Task<IActionResult> SignUpAsync([FromBody] SignUpUser user)
+        public async Task<IActionResult> SignUpAsync([FromBody] SignUpUserModel user)
         {
             var result = await _userRepository.SignUpAsync(user);
             if (result.Equals("true"))
@@ -52,7 +53,7 @@ namespace Shop.Api.Controllers
         }
 
         [HttpPost("SignUpUser")]
-        public async Task<IActionResult> SignUpUserAsync(SignUpUser user)
+        public async Task<IActionResult> SignUpUserAsync(SignUpUserModel user)
         {
             string result = await _userRepository.SignUpUserAsync(user);
             if (result.Equals("success"))
@@ -67,7 +68,7 @@ namespace Shop.Api.Controllers
         }
 
         [HttpPost("SignIn")]
-        public async Task<IActionResult> SignInAsync(SignInUser user)
+        public async Task<IActionResult> SignInAsync(SignInUserModel user)
         {
             var result = await _userRepository.SignInAsync(user);
             if(result is null || String.IsNullOrEmpty(result.Token))
@@ -109,7 +110,7 @@ namespace Shop.Api.Controllers
 
         [HttpPost("ChangeProfile")]
         [Authorize(AuthenticationSchemes = "Bearer")]
-        public async Task<IActionResult> ChangeProfileAsync([FromBody] SignUpUser user)
+        public async Task<IActionResult> ChangeProfileAsync([FromBody] SignUpUserModel user)
         {
            string userName = User.FindFirstValue(ClaimTypes.Name);
            string result = await _userRepository.SetProfileUser(user, userName);
@@ -188,14 +189,20 @@ namespace Shop.Api.Controllers
         public async Task<IActionResult> ForgotPasswordAsync(string email)
         {
             if(String.IsNullOrEmpty(email)) return BadRequest();
-            return Ok();
+            var tokenReset = await _userRepository.ResetPasswordAsync(email);
+            if (tokenReset == null)
+                return NotFound("User not found");
+            return Ok("Check Your Email!!");
         }
 
         [HttpPost]
         [Route("/ResetPassword")]
-        public async Task<IActionResult> ResetPasswordAsync()
+        public async Task<IActionResult> ResetPasswordAsync([FromBody] ResetPasswordModel model)
         {
-            return Ok();
+            var result = await _userRepository.ChangResetPasswordAsync(model);
+            if (result.Equals("true")) return Ok();
+            return BadRequest();
         }
+
     }
 }

@@ -59,8 +59,8 @@ namespace Shop.Api.Repository
                 switch (search.sort)
                 {
                     case "Namekey": products = products.OrderBy(x => x.Name); break;
-                    case "Price_up": products = products.OrderBy(x => x.Price); break;
-                    case "Price_down": products = products.OrderByDescending(x => x.Price); break;
+                    case "T": products = products.OrderBy(x => x.Price); break;
+                    case "G": products = products.OrderByDescending(x => x.Price); break;
                 }
             }
             #endregion
@@ -86,7 +86,7 @@ namespace Shop.Api.Repository
 
             var pagedProducts = products.Skip(search.PageSize * (search.PageIndex - 1))
                                          .Take(search.PageSize)
-                                         .Select(pro => _mapper.Map<ProductT>(pro))
+                                         .Select(pro => _mapper.Map<ProductOnlyDTO>(pro))
                                          .ToList();
 
             var imagePaths = pagedProducts.Select(p => Path.Combine(p.Image ?? "")).ToList();
@@ -104,7 +104,7 @@ namespace Shop.Api.Repository
             };
         }
 
-        public async Task<string> AddProductAsysnc(ProductAdd product)
+        public async Task<string> AddProductAsysnc(ProductAddModel product)
         {
             if (product.Image is not null)
             {
@@ -139,7 +139,7 @@ namespace Shop.Api.Repository
             return "Image or category maybe null!!";
         }
 
-        public async Task<string> AddSizeProductAsync(AddSize<StringSize> stringSizes)
+        public async Task<string> AddSizeProductAsync(AddSizeModel<StringSize> stringSizes)
         {
             Product? product = await _dbContext.Products.Include(p => p.Sizes).FirstOrDefaultAsync(pro => pro.Id == stringSizes.ProductID);
             if (product is null)
@@ -196,7 +196,7 @@ namespace Shop.Api.Repository
             return "Suggest!!";
         }
 
-        public Task<string> AddProductAzureAsync(ProductAdd product)
+        public Task<string> AddProductAzureAsync(ProductAddModel product)
         {
             throw new NotImplementedException();
         }
@@ -240,7 +240,7 @@ namespace Shop.Api.Repository
             return szUpdate.Qty - quanlity;
         }
 
-        public async Task<bool> SetProductAsync(ProductAdd product)
+        public async Task<bool> SetProductAsync(ProductAddModel product)
         {
             Product? productModifi = _dbContext.Products.FirstOrDefault(p => p.Id == product.id);
             if (productModifi is null)
@@ -272,7 +272,7 @@ namespace Shop.Api.Repository
             _dbContext.Entry(productModifi).State = EntityState.Modified;
             try { await _dbContext.SaveChangesAsync(); return true; } catch { return false; }
         }
-        public async Task<bool> Set2ProductAsync(ProductAdd product)
+        public async Task<bool> Set2ProductAsync(ProductAddModel product)
         {
             using var transaction = _dbContext.Database.BeginTransaction(IsolationLevel.Serializable);
             try

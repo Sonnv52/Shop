@@ -117,7 +117,6 @@ namespace Shop.Api.Controllers
 
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-
         // DELETE: api/Products/5
         [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
@@ -128,10 +127,8 @@ namespace Shop.Api.Controllers
             {
                 return NotFound();
             }
-
            product.IsDeleted= true;
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 

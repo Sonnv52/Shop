@@ -64,7 +64,7 @@ namespace Shop.Api.Controllers
         }
 
         [HttpPost("Post")]
-        public async Task<IActionResult> SaveImage([FromForm] ProductAdd product)
+        public async Task<IActionResult> SaveImage([FromForm] ProductAddModel product)
         {
             BlobContainerClient blod = new BlobContainerClient(_configuration["AzureString"], "shoimage");
             using (var stream = new MemoryStream())
