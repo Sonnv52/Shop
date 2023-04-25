@@ -1,23 +1,14 @@
 ﻿using Azure.Storage.Blobs;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Shop.Api.Abtracst;
 using Shop.Api.Data;
-using Shop.Api.Models;
 using Shop.Api.Models.CreateModel;
 using Shop.Api.Models.Order;
-using Shop.Api.Models.Products;
-using StackExchange.Redis;
-using System.Net.WebSockets;
-using System.Text.Json.Nodes;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using System.Security.Cryptography;
 using MassTransit;
-using MassTransit.Transports;
-using Share.Message;
 
 namespace Shop.Api.Controllers
 {

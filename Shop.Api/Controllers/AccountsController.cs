@@ -1,16 +1,11 @@
 ﻿using ForgotPasswordService.Repository;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.Differencing;
-using Microsoft.Extensions.Caching.Distributed;
 using Shop.Api.Abtracst;
 using System.Security.Claims;
 using Shop.Api.Data;
 using Shop.Api.Models;
-using Shop.Api.Models.ListLog;
-using Shop.Api.Repository;
 using Shop.Api.Models.Page;
 using Shop.Api.Models.Order;
 using ForgotPasswordService.Message;

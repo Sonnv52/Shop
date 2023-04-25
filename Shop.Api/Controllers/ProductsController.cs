@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Caching.StackExchangeRedis;
-using Newtonsoft.Json;
 using Shop.Api.Abtracst;
 using Shop.Api.Models;
-using Shop.Api.Models.CreateModel;
-using StackExchange.Redis;
 using Shop.Api.Data;
-using Shop.Api.Repository;
 
 namespace Shop.Api.Controllers
 {

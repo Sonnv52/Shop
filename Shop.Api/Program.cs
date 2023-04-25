@@ -120,6 +120,7 @@ builder.Services.AddScoped<IProductServices, ProductRepository>();
 builder.Services.AddScoped<IPushlishService<ProductSend>,PushlishResponsitory>();
 builder.Services.AddScoped<IImageServices, ImageResponsitory>();
 builder.Services.AddScoped<IOrderServices, OrderResponsitory>();
+builder.Services.AddScoped<IPayService, PayRepository>();
 //Add email config
 var emailCofig = configuration.GetSection("EmailCofiguration").Get<EmailCofiuration>();
 builder.Services.AddSingleton(emailCofig);
