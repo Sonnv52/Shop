@@ -2,6 +2,7 @@
 using Shop.Api.Data;
 using Microsoft.AspNetCore.Authorization;
 using Shop.Api.Abtracst;
+using Shop.Api.Models.Order;
 
 namespace Shop.Api.Controllers
 {
@@ -18,11 +19,19 @@ namespace Shop.Api.Controllers
         }
         [HttpPost]
         [Route("/Pay")]
-        public async Task<IActionResult> PayAsync()
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> PayAsync([FromBody] PayModel pay)
         {
-            //var user = HttpContext.Items["User"] as UserApp;
-            var result = await _payService.GetUrlPayAsync(1000);
+            var user = HttpContext.Items["User"] as UserApp;
+            var result = await _payService.GetUrlPayAsync(pay);
             return Ok(result);
+        }
+
+        [HttpPatch]
+        [Route("/Accept/Pay")]
+        public async Task<IActionResult> AcceptPayAsync(string idBill)
+        {
+
         }
     }
 }

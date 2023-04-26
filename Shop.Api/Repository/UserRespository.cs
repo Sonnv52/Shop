@@ -1,29 +1,17 @@
-﻿using Azure.Core;
-using Microsoft.AspNetCore.Identity;
-using System.Web.Http.ModelBinding;
+﻿using Microsoft.AspNetCore.Identity;
 using Shop.Api.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Shop.Api.Data;
-using System.Data;
-using Azure;
 using AutoMapper;
 using ForgotPasswordService.Repository;
-using Shop.Api.Models.CreateModel;
 using Shop.Api.Abtracst;
 using System.Security.Cryptography;
-using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Page;
-using NuGet.Common;
 using ForgotPasswordService.Message;
-using Newtonsoft.Json.Linq;
-using static System.Net.Mime.MediaTypeNames;
-using System.Net;
-
 namespace Shop.Api.Repository
 {
     public class UserRespository : IUserServices
@@ -329,7 +317,9 @@ namespace Shop.Api.Repository
             {
                 await _userManager.UpdateAsync(user);
                 return true;
-            } catch (Exception ex) { return false; }
+            } catch (Exception) { 
+                return false; 
+            }
         }
 
         public async Task<bool> ChangePassword(string email, string currentPassword, string newPassword)

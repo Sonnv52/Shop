@@ -12,7 +12,7 @@ using Shop.Api.Data;
 namespace Shop.Api.Migrations
 {
     [DbContext(typeof(NewDBContext))]
-    [Migration("20230415052216_init")]
+    [Migration("20230426032617_init")]
     partial class init
     {
         /// <inheritdoc />
