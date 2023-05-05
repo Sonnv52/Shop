@@ -1,23 +1,16 @@
 ﻿using AutoMapper;
 using MassTransit;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.DotNet.Scaffolding.Shared.Messaging;
-using Microsoft.EntityFrameworkCore;
 using Share.Message;
 using Shop.Api.Abtracst;
 using Shop.Api.Models;
 using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Order;
-using System.Collections.Generic;
 using Shop.Api.Data;
 using Shop.Api.Enums;
-using StackExchange.Redis;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
 using Shop.Api.Models.Page;
-using System.Drawing.Printing;
-using System.Net.WebSockets;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Shop.Api.Repository
 {
@@ -30,8 +23,9 @@ namespace Shop.Api.Repository
         private readonly IMapper _mapper;
         private readonly IImageServices _imageServices;
         private readonly IDistributedCache _cache;
+        private readonly IPayService _pay;
         private readonly ILogger<OrderResponsitory> _logger;
-        public OrderResponsitory(ILogger<OrderResponsitory> logger, IDistributedCache cache, IImageServices imageServices, IMapper mapper, NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPushlishService<ProductSend> pushlishService)
+        public OrderResponsitory(IPayService pay, ILogger<OrderResponsitory> logger, IDistributedCache cache, IImageServices imageServices, IMapper mapper, NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPushlishService<ProductSend> pushlishService)
         {
             _imageServices = imageServices;
             _dbContext = dbContext;
@@ -41,6 +35,7 @@ namespace Shop.Api.Repository
             _mapper = mapper;
             _cache = cache;
             _logger = logger;
+            _pay = pay;
         }
 
         public async Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize)
@@ -54,7 +49,7 @@ namespace Shop.Api.Repository
                 Phone = b.Phone,
                 Status = b.Status,
                 email = b.UserApp.Email,
-                Name= b.UserApp.Name
+                Name = b.UserApp.Name
             });
             var billResult = billPage.ToPagedList(page, pageSize);
             return billResult;
@@ -62,10 +57,11 @@ namespace Shop.Api.Repository
 
         public async Task<BillDetailDTO> GetBillDetailAsync(Guid id)
         {
-            var bill = await _dbContext.Bills!.Where(b => b.Id == id).Include(b => b.UserApp).Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
+            var bill = await _dbContext.Bills!.Where(b => b.Id == id).Include(b => b.UserApp)
+                .Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
             if (bill is null)
                 return new BillDetailDTO
-                {};
+                { };
 
             var result = new BillDetailDTO
             {
@@ -75,7 +71,7 @@ namespace Shop.Api.Repository
                 Email = bill.UserApp.Email,
                 Detail = bill!.BillDetails!.Select(b => new DetailBill
                 {
-                    Price = b.Price?? 0,
+                    Price = b.Price ?? 0,
                     ProductId = b.Product!.Id,
                     ProductName = b.Product.Name,
                     Qty = b.Totals,
@@ -127,7 +123,7 @@ namespace Shop.Api.Repository
             UserApp customer = await _userServices.GetUserByEmailAsync(email);
             var bills = _dbContext.Bills.Include(b => b.UserApp).Include(b => b.BillDetails)
                 .ThenInclude(b => b.Product).Where(b => b.UserApp.Id == customer.Id).OrderByDescending(b => b.OderDate);
-            if(bills is null)
+            if (bills is null)
             {
                 return new List<BillList>();
             }
@@ -179,6 +175,7 @@ namespace Shop.Api.Repository
                .Where(ps => ps.Product.Id == Order.id)
                .Select(ps => ps.Product);
                 Product? pr = product?.FirstOrDefault();
+
                 if (pr is null)
                 {
                     return new OrderLog
@@ -214,12 +211,32 @@ namespace Shop.Api.Repository
                     await _dbContext!.BillDetails.AddAsync(billDetail);
                 }
             }
+            // Pay online
+            if (!string.IsNullOrEmpty(request.PayMethod) && !string.IsNullOrEmpty(request.Amonut))
+            {
+                var url = await _pay.GetUrlPayAsync(new PayModel
+                {
+                    PaymentMthods = request.PayMethod,
+                    Amount = request.Amonut,
+                    OrderID = bill.Id
+                });
+                bill.Status = "Chờ thanh toán";
+                return new OrderLog
+                {
+                    Status = true,
+                    UrlPayment = url != "" ? url : "Có lỗi xảy ra, thử lại sau",
+                    Id = bill.Id
+                };
+            }
+
             foreach (var Order in request.Products)
             {
                 await _productServices.UpdateQuantySizeAsync(Order.Qty, Order.id, Order.Size ?? "NO");
             }
+
             try
             {
+                //User cancel in web
                 if (!token.IsCancellationRequested)
                     await _dbContext.SaveChangesAsync();
                 else
@@ -229,6 +246,7 @@ namespace Shop.Api.Repository
             {
                 throw new Exception(ex.ToString());
             }
+
             /*IList<string> keyPushlish = new List<string>();
             foreach (var i in Image)
             {
@@ -253,18 +271,18 @@ namespace Shop.Api.Repository
 
         public async Task<bool> SetBillAsync(IList<SetBillRequest> setBills)
         {
-           foreach(var setBill in setBills)
+            foreach (var setBill in setBills)
             {
-                if(setBill is null) continue;
+                if (setBill is null) continue;
                 var bill = await _dbContext.Bills.FirstOrDefaultAsync(b => b.Id == setBill.id);
-                if(bill is null) continue;
+                if (bill is null) continue;
                 if (setBill.status == (int)OrderStatus.Shipping)
                     bill.Status = "Đang giao hàng";
                 else if (setBill.status == (int)OrderStatus.Canceled)
                     bill.Status = "Đã hủy đơn";
                 else if (setBill.status == (int)OrderStatus.Success)
                     bill.Status = "Đã giao hàng";
-                _dbContext.Entry(bill).State = EntityState.Modified;  
+                _dbContext.Entry(bill).State = EntityState.Modified;
             }
             try
             {
@@ -291,7 +309,8 @@ namespace Shop.Api.Repository
                 _logger.LogCritical("Get bill not by customer!!");
                 return new BillDetailDTO { };
             }
-            if(bill.BillDetails is null) {
+            if (bill.BillDetails is null)
+            {
                 return new BillDetailDTO { };
             }
 #pragma warning disable CS8619 // Nullability of reference types in value doesn't match target type.
@@ -324,7 +343,7 @@ namespace Shop.Api.Repository
             //Get Bill
             var bill = _dbContext.Bills.Include(b => b.UserApp)
                 .Where(b => b.Id == id && b.UserApp.Id == customer.Id).FirstOrDefault();
-            if(bill is null)
+            if (bill is null)
             {
                 throw new Exception("Can find bill");
             }
@@ -334,13 +353,16 @@ namespace Shop.Api.Repository
             }
             else return $"Không thể hủy đơn {bill.Status}";
             _dbContext.Entry(bill).State = EntityState.Modified;
-            try { await _dbContext.SaveChangesAsync();
+            try
+            {
+                await _dbContext.SaveChangesAsync();
                 return "Đã hủy đơn";
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 throw new Exception(ex.ToString());
             };
-            
+
         }
     }
 }

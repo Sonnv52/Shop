@@ -70,8 +70,6 @@ namespace Shop.Api.VNPay
             return baseUrl;
         }
 
-
-
         #endregion
 
         #region Response process
