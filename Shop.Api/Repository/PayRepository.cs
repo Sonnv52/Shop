@@ -24,17 +24,18 @@ namespace Shop.Api.Repository
         }
         public async Task<string> GetUrlPayAsync(PayModel pay)
         {
-            if (string.IsNullOrEmpty(pay.Amount) || string.IsNullOrEmpty(pay.PaymentMthods))
+            if (string.IsNullOrEmpty(pay.PaymentMthods))
             {
                 _logger.LogError("Pay Method and Amount cant be null");
                 throw new Exception("Pay Method and Amount cant be null");
             }
             //DeCrypt Here
-            var payi = pay.PaymentMthods.DecryptString();
+            /*var payi = pay.PaymentMthods.DecryptString();
             var amount = Task.Run(() => DeCrypt(pay.Amount));
             var payMethod = Task.Run(() => DeCrypt(pay.PaymentMthods));
             await Task.WhenAll(amount, payMethod);
-            if (decimal.TryParse(amount.Result, out decimal money) && int.TryParse(payMethod.Result, out int method))
+            */
+            if (decimal.TryParse(pay.Amount, out decimal money) && int.TryParse( pay.PaymentMthods, out int method))
             {
                 var url = Pay(method, money, pay.OrderID);
                 return url;
@@ -88,7 +89,7 @@ namespace Shop.Api.Repository
             {
                 vnpay.AddRequestData("vnp_Locale", "en");
             }*/
-            vnpay.AddRequestData("vnp_OrderInfo", "Thanh toan don hang:" + orderID);
+            vnpay.AddRequestData("vnp_OrderInfo", $"{orderID}");
             vnpay.AddRequestData("vnp_OrderType", "other"); //default value: other
 
             vnpay.AddRequestData("vnp_ReturnUrl", vnp_Returnurl ?? "");

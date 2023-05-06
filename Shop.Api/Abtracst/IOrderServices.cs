@@ -12,10 +12,11 @@ namespace Shop.Api.Abtracst
         Task<double> GetPriceAsync(IList<ProductsRequest?> products);
         Task<IList<BillDTO?>> GetBillsAsync(string email);
         Task<bool> SetBillAsync(IList<SetBillRequest> setBills);
-        Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize);
+        Task<PagedList<BillAdminDTO>> GetAllBillAsync(PageQuery page);
         Task<BillDetailDTO> GetBillDetailAsync(Guid id);
         Task<IList<BillList>> GetYourBillAsync(string email);
         Task<BillDetailDTO> GetYourBillDetaillAsync(string email, Guid idBill);
         Task<string> CancelAsync(string email, Guid id);
+        Task<bool> AcceptPayAsync(Guid id, string mail, string status);
     }
 }

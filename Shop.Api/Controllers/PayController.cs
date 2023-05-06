@@ -6,6 +6,7 @@ using Shop.Api.Models.Order;
 using Shop.Api.Models.ListLog;
 using Shop.Api.VNPay;
 using Shop.Api.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace Shop.Api.Controllers
 {
@@ -17,12 +18,15 @@ namespace Shop.Api.Controllers
         private readonly IPayService _payService;
         private readonly IConfiguration _configuration;
         private readonly NewDBContext _dbContext;
-        public PayController(NewDBContext dbContext, IConfiguration configuration, IPayService payService, IHttpContextAccessor contextAccessor)
+        private readonly IOrderServices _orderServices;
+        public PayController(IOrderServices orderServices, NewDBContext dbContext, IConfiguration configuration, IPayService payService, 
+            IHttpContextAccessor contextAccessor)
         {
             _contextAccessor = contextAccessor;
             _payService = payService;
             _configuration= configuration;
             _dbContext= dbContext;  
+            _orderServices= orderServices;
         }
         [HttpPost]
         [Route("/Pay")]
@@ -134,11 +138,16 @@ namespace Shop.Api.Controllers
             }
             return Ok(returnContent);
         }
-        [HttpGet]
-        [Route("/Hello")]
-        public async Task<IActionResult> GetName()
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [HttpPost]
+        [Route("/AcceptPay")]
+        public async Task<IActionResult> GetName([FromBody] AcceptPayRequest request)
         {
-            return Ok("Hello");
+            var user = HttpContext.Items["User"] as UserApp;
+            if (user == null)
+                return Unauthorized();
+            var result = await _orderServices.AcceptPayAsync(request.Id, user.Email, request.Status);
+            return Ok(result);
         }
     }
     

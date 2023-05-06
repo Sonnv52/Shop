@@ -16,13 +16,11 @@ namespace Shop.Api.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        private readonly NewDBContext _dbContext;
         private readonly IConfiguration _configuration;
         private readonly IOrderServices _orderServices;
         private readonly IBus _bus;
-        public OrderController(IBus bus, NewDBContext dBContext, IConfiguration configuration, IOrderServices orderServices)
+        public OrderController(IBus bus, IConfiguration configuration, IOrderServices orderServices)
         {
-            _dbContext = dBContext;
             _configuration = configuration;
             _orderServices = orderServices;
             _bus= bus;

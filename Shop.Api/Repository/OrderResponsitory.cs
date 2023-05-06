@@ -7,10 +7,9 @@ using Shop.Api.Models.ListLog;
 using Shop.Api.Models.Order;
 using Shop.Api.Data;
 using Shop.Api.Enums;
-using Microsoft.Extensions.Caching.Distributed;
-using System.Text;
 using Shop.Api.Models.Page;
-using Microsoft.IdentityModel.Tokens;
+using System.Globalization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Shop.Api.Repository
 {
@@ -22,10 +21,12 @@ namespace Shop.Api.Repository
         private readonly IPushlishService<ProductSend> _pushlishService;
         private readonly IMapper _mapper;
         private readonly IImageServices _imageServices;
-        private readonly IDistributedCache _cache;
         private readonly IPayService _pay;
         private readonly ILogger<OrderResponsitory> _logger;
-        public OrderResponsitory(IPayService pay, ILogger<OrderResponsitory> logger, IDistributedCache cache, IImageServices imageServices, IMapper mapper, NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPushlishService<ProductSend> pushlishService)
+        private readonly IHttpContextAccessor _contextAccessor;
+        public OrderResponsitory(IHttpContextAccessor contextAccessor, IPayService pay, ILogger<OrderResponsitory> logger,
+            IImageServices imageServices, IMapper mapper,
+            NewDBContext dbContext, IUserServices userServices, IProductServices productServices, IPushlishService<ProductSend> pushlishService)
         {
             _imageServices = imageServices;
             _dbContext = dbContext;
@@ -33,14 +34,41 @@ namespace Shop.Api.Repository
             _productServices = productServices;
             _pushlishService = pushlishService;
             _mapper = mapper;
-            _cache = cache;
             _logger = logger;
             _pay = pay;
+            _contextAccessor = contextAccessor;
         }
 
-        public async Task<PagedList<BillAdminDTO>> GetAllBillAsync(int page, int pageSize)
+        public async Task<PagedList<BillAdminDTO>> GetAllBillAsync(PageQuery page)
         {
-            var bills = _dbContext.Bills.Include(b => b.UserApp);
+            var bills = _dbContext.Bills.Include(b => b.UserApp).AsQueryable();
+            //Filter by DateTime
+            if(!string.IsNullOrEmpty(page.StartDate) && !string.IsNullOrEmpty(page.EndDate))
+            {
+                string startAt = page.StartDate.Replace("-", "/");
+                string endAt = page.EndDate.Replace("-", "/");  
+                DateTime startDate, endDate;
+                DateTime.TryParseExact(startAt, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out startDate);
+                DateTime.TryParseExact(endAt, "dd/MM/yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out endDate);
+                bills = bills.Where(b => b.OderDate >= startDate && b.OderDate <= endDate);
+            }
+            // In Day
+            if (page.InDay == true)
+            {
+                bills = bills.Where(b => b.OderDate.Date == DateTime.Today);
+            }
+
+            // In Month
+            if (page.InMonth == true)
+            {
+                bills = bills.Where(b => b.OderDate.Year == DateTime.Today.Year && b.OderDate.Month == DateTime.Today.Month);
+            }
+
+            // In Year
+            if (page.InYear == true)
+            {
+                bills = bills.Where(b => b.OderDate.Year == DateTime.Today.Year);
+            }
             var billPage = bills.Select(b => new BillAdminDTO
             {
                 Id = b.Id,
@@ -51,7 +79,7 @@ namespace Shop.Api.Repository
                 email = b.UserApp.Email,
                 Name = b.UserApp.Name
             });
-            var billResult = billPage.ToPagedList(page, pageSize);
+            var billResult = billPage.ToPagedList(page.pageIndex, page.pageSize);
             return billResult;
         }
 
@@ -60,9 +88,8 @@ namespace Shop.Api.Repository
             var bill = await _dbContext.Bills!.Where(b => b.Id == id).Include(b => b.UserApp)
                 .Include(x => x.BillDetails).ThenInclude(bd => bd.Product).FirstOrDefaultAsync();
             if (bill is null)
-                return new BillDetailDTO
-                { };
-
+                return new BillDetailDTO { };
+            
             var result = new BillDetailDTO
             {
                 GuidId = bill.Id,
@@ -211,6 +238,8 @@ namespace Shop.Api.Repository
                     await _dbContext!.BillDetails.AddAsync(billDetail);
                 }
             }
+
+            var orderStatus = new OrderLog { };
             // Pay online
             if (!string.IsNullOrEmpty(request.PayMethod) && !string.IsNullOrEmpty(request.Amonut))
             {
@@ -221,7 +250,7 @@ namespace Shop.Api.Repository
                     OrderID = bill.Id
                 });
                 bill.Status = "Chờ thanh toán";
-                return new OrderLog
+                orderStatus = new OrderLog
                 {
                     Status = true,
                     UrlPayment = url != "" ? url : "Có lỗi xảy ra, thử lại sau",
@@ -238,7 +267,9 @@ namespace Shop.Api.Repository
             {
                 //User cancel in web
                 if (!token.IsCancellationRequested)
+                {
                     await _dbContext.SaveChangesAsync();
+                }
                 else
                     _logger.LogInformation($"{custommer.UserName} cancel when order at {DateTime.Now.ToString()})!!");
             }
@@ -246,25 +277,6 @@ namespace Shop.Api.Repository
             {
                 throw new Exception(ex.ToString());
             }
-
-            /*IList<string> keyPushlish = new List<string>();
-            foreach (var i in Image)
-            {
-                var imKey = new StringBuilder($"image:{Guid.NewGuid()}");
-                if (i is null) continue;
-                try
-                {
-                    await _cache.SetStringAsync(imKey.ToString(), Convert.ToBase64String(i), new DistributedCacheEntryOptions
-                    {
-                        AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1)
-                    });
-                    
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogCritical(ex.ToString());
-                }
-            }*/
 
             return new OrderLog { Status = true };
         }
@@ -363,6 +375,24 @@ namespace Shop.Api.Repository
                 throw new Exception(ex.ToString());
             };
 
+        }
+
+        public async Task<bool> AcceptPayAsync(Guid id, string mail, string status)
+        {
+            var bill = _dbContext.Bills.Include(b => b.UserApp).FirstOrDefault(b => b.Id == id && b.UserApp.Email.Equals(mail));
+            if (bill is null)
+                return false;
+            bill.Status = status;
+            _dbContext.Entry(bill).State = EntityState.Modified;
+           try
+            {
+                await _dbContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.ToString());
+            };
         }
     }
 }

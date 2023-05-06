@@ -8,6 +8,7 @@ using System.Drawing.Printing;
 using Shop.Api.Models.Page;
 using X.PagedList;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using System.Globalization;
 
 namespace Shop.Api.Controllers.Admin
 {
@@ -44,7 +45,7 @@ namespace Shop.Api.Controllers.Admin
         [Authorize(AuthenticationSchemes = "Bearer"), Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllBillAsync([FromQuery] PageQuery page)
         {
-            var bill = await _orderServices.GetAllBillAsync(page.pageIndex, page.pageSize);
+            var bill = await _orderServices.GetAllBillAsync(page);
             return Ok(bill);
         }
 
