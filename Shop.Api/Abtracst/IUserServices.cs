@@ -22,5 +22,6 @@ namespace Shop.Api.Abtracst
         public Task<bool> ChangePassword(string email, string currentPassword, string newPassword);
         public Task<string> ResetPasswordAsync(string email);
         public Task<string> ChangResetPasswordAsync(ResetPasswordModel request);
+        public Task<AuthenRespone> SignInAdminAsync(SignInUserModel user);
     }
 }

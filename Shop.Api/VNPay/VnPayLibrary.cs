@@ -112,12 +112,6 @@ namespace Shop.Api.VNPay
 
     public class Utils
     {
-        private readonly HttpContext _httpContext;
-
-        public Utils(IHttpContextAccessor httpContextAccessor)
-        {
-            _httpContext = httpContextAccessor.HttpContext;
-        }
         public static String HmacSHA512(string key, String inputData)
         {
             var hash = new StringBuilder();

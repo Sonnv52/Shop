@@ -14,6 +14,7 @@ namespace Shop.Api.Data
         public string Adress { get; set; }
         public string Phone { get; set; } = string.Empty;
         public string Status { get; set; } = "Đã đặt hàng";
+        public string PayStatus { get; set; } = "Chưa thanh toán";
         public virtual ICollection<BillDetail> BillDetails { get; set; }
         
         public UserApp UserApp { get; set; }

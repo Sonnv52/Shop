@@ -78,6 +78,22 @@ namespace Shop.Api.Controllers
             return Ok(result);
         }
 
+        [HttpPost("SignIn/Admin")]
+        public async Task<IActionResult> SignInAdminAsync(SignInUserModel user)
+        {
+            var result = await _userRepository.SignInAsync(user);
+            if (result is null || String.IsNullOrEmpty(result.Token))
+            {
+                return StatusCode(403, "Can't login this account");
+            }
+            if (result.Token.Equals("false"))
+            {
+                return StatusCode(500, "Password or Email incorect"); ;
+            }
+
+            return Ok(result);
+        }
+
         [HttpGet("profile")]
         [Authorize(AuthenticationSchemes = "Bearer"),Authorize(Roles ="Admin")]
         public async Task<IActionResult> GetProfileAsync([FromBody] String Email)

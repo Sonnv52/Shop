@@ -9,7 +9,6 @@ using Shop.Api.Data;
 using Shop.Api.Enums;
 using Shop.Api.Models.Page;
 using System.Globalization;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Shop.Api.Repository
 {
@@ -154,10 +153,10 @@ namespace Shop.Api.Repository
             {
                 return new List<BillList>();
             }
-            var billPage = bills.Select(b => new BillList(b)
+            var billPage = bills.Select(b => new BillList(b, b.BillDetails.Select(p => System.IO.File.ReadAllBytes(p.Product.Image ?? "")))
             ).ToList();
-            return billPage;
 
+            return billPage;
         }
         public async Task<double> GetPriceAsync(IList<ProductsRequest?> products)
         {
@@ -238,7 +237,7 @@ namespace Shop.Api.Repository
                     await _dbContext!.BillDetails.AddAsync(billDetail);
                 }
             }
-
+            //Create return object
             var orderStatus = new OrderLog { };
             // Pay online
             if (!string.IsNullOrEmpty(request.PayMethod) && !string.IsNullOrEmpty(request.Amonut))
@@ -249,7 +248,6 @@ namespace Shop.Api.Repository
                     Amount = request.Amonut,
                     OrderID = bill.Id
                 });
-                bill.Status = "Chờ thanh toán";
                 orderStatus = new OrderLog
                 {
                     Status = true,
@@ -278,7 +276,7 @@ namespace Shop.Api.Repository
                 throw new Exception(ex.ToString());
             }
 
-            return new OrderLog { Status = true };
+            return orderStatus;
         }
 
         public async Task<bool> SetBillAsync(IList<SetBillRequest> setBills)
@@ -382,7 +380,7 @@ namespace Shop.Api.Repository
             var bill = _dbContext.Bills.Include(b => b.UserApp).FirstOrDefault(b => b.Id == id && b.UserApp.Email.Equals(mail));
             if (bill is null)
                 return false;
-            bill.Status = status;
+            bill.PayStatus = status;
             _dbContext.Entry(bill).State = EntityState.Modified;
            try
             {

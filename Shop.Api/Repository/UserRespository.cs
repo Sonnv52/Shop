@@ -42,7 +42,7 @@ namespace Shop.Api.Repository
             _configuration = configuration;
             _roleManager = roleManager;
             _mapper = mapper;
-            _send= send;
+            _send = send;
         }
 
         public async Task<string> SignUpADAsync(SignUpUserModel model)
@@ -93,7 +93,7 @@ namespace Shop.Api.Repository
                 UserName = model.Email,
                 Name = model.Name,
                 Adress = model.Adress,
-                PhoneNumber= model.PhoneNumber
+                PhoneNumber = model.PhoneNumber
             };
             if (model.Password is null) return "false";
             var result = await _userManager.CreateAsync(user, model.Password.Trim());
@@ -112,7 +112,7 @@ namespace Shop.Api.Repository
         public async Task<AuthenRespone> SignInAsync(SignInUserModel model)
         {
             UserApp user = await _userManager.FindByNameAsync(model.Email);
-            if(user is null)
+            if (user is null)
             {
                 return new AuthenRespone { Token = "false" };
             }
@@ -161,14 +161,17 @@ namespace Shop.Api.Repository
         }
         private JwtSecurityToken GetToken(List<Claim> authClaims)
         {
-#pragma warning disable CS8604 // Possible null reference argument.
+            // Lấy múi giờ của khu vực của bạn
+            TimeZoneInfo localTimeZone = TimeZoneInfo.Local;
+            // Lấy thời gian hiện tại
+            DateTime currentTime = DateTime.Now;
+            // Thêm 15 phút vào thời gian hiện tại và chuyển đổi sang múi giờ của bạn
+            DateTime resultTime = currentTime.AddMinutes(15).ToUniversalTime().ToLocalTime();
             var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Secret"]));
-#pragma warning restore CS8604 // Possible null reference argument.
-
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:ValidIssuer"],
                 audience: _configuration["JWT:ValidAudience"],
-                expires: DateTime.Now.AddDays(1),
+                expires: resultTime,
                 claims: authClaims,
                 signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                 );
@@ -314,7 +317,7 @@ namespace Shop.Api.Repository
             return user;
         }
 
-        public async Task<PagedList<UserApp>> GetAllUserAsync(int page , int pageSize)
+        public async Task<PagedList<UserApp>> GetAllUserAsync(int page, int pageSize)
         {
             var usersInRole = await _userManager.GetUsersInRoleAsync("User");
             return usersInRole.GetPage(page, pageSize);
@@ -329,12 +332,13 @@ namespace Shop.Api.Repository
             {
                 await _userManager.UpdateAsync(user);
                 return true;
-            } catch (Exception ex) { return false; }
+            }
+            catch (Exception ex) { return false; }
         }
 
         public async Task<bool> ChangePassword(string email, string currentPassword, string newPassword)
         {
-            var user = await  _userManager.FindByNameAsync(email);
+            var user = await _userManager.FindByNameAsync(email);
             if (user is null)
             {
                 return false;
@@ -362,12 +366,62 @@ namespace Shop.Api.Repository
             if (user is null)
                 return "false";
             string token = request.TokenReset.Replace("1221", "/");
-            var resetPassResult = await _userManager.ResetPasswordAsync(user,token, request.Password);
-            if(resetPassResult.Succeeded)
+            var resetPassResult = await _userManager.ResetPasswordAsync(user, token, request.Password);
+            if (resetPassResult.Succeeded)
             {
                 return "true";
             }
             return "false";
+        }
+
+        public async Task<AuthenRespone> SignInAdminAsync(SignInUserModel model)
+        {
+            UserApp user = await _userManager.FindByNameAsync(model.Email);
+            if (user is null)
+            {
+                return new AuthenRespone { Token = "false" };
+            }
+            if (!user.LockoutEnabled)
+            {
+                return new AuthenRespone { Token = "Tài khoản đã bị vô hiệu hóa!!" };
+            }
+            if (user is not null && await _userManager.CheckPasswordAsync(user, model.Password))
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+                if (!userRoles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return new AuthenRespone
+                    {
+                        Token = "false"
+                    };
+                }
+                var authClaims = new List<Claim>
+                {
+                    new Claim(ClaimTypes.Name, user.UserName),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                };
+                foreach (var userRole in userRoles)
+                {
+                    authClaims.Add(new Claim(ClaimTypes.Role, userRole));
+                }
+                var token = GetToken(authClaims);
+                var Refreshtoken = await Task.Run(() => GenerateRefreshToken());
+                user.RefreshToken = Refreshtoken;
+                _ = int.TryParse(_configuration["JWT:RefreshTokenValidityInDays"], out int refreshTokenValidityInDays);
+                user.RefreshTokenExpiryTime = DateTime.Now.AddDays(refreshTokenValidityInDays);
+                await _userManager.UpdateAsync(user);
+                var ResponeToken = new AuthenRespone
+                {
+                    User = model.Email,
+                    Token = new JwtSecurityTokenHandler().WriteToken(token),
+                    RefreshToken = Refreshtoken
+                };
+                return ResponeToken;
+            }
+            return new AuthenRespone
+            {
+                Token = "false"
+            };
         }
     }
 }
